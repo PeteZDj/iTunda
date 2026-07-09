@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { ProduceResponse } from '../types';
 import { flagUrl } from '../lib/geo';
+import { useCurrency } from '../context/CurrencyContext';
 import './ProduceCard.css';
 
 function fmt(d: string | null) {
@@ -15,9 +16,15 @@ interface Props {
 export default function ProduceCard({ item }: Props) {
   const isScheduled = item.availableFrom && new Date(item.availableFrom) > new Date();
   const place = item.region || item.town || item.county || '—';
+  const navigate = useNavigate();
+  const { format } = useCurrency();
+
+  const go = (suffix = '') => navigate(`/produce/${item.id}${suffix}`);
+  const stop = (fn: () => void) => (e: React.MouseEvent) => { e.stopPropagation(); fn(); };
 
   return (
-    <Link to={`/produce/${item.id}`} className="produce-card">
+    <div className="produce-card" onClick={() => go()} role="link" tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter') go(); }}>
       <div className="pc-media">
         <img className="pc-photo" src={item.imageUrl} alt={item.name} loading="lazy" />
         <div className="pc-media-badges">
@@ -27,7 +34,7 @@ export default function ProduceCard({ item }: Props) {
           {item.isExportReady && <span className="badge badge-amber">✈ Export</span>}
           {isScheduled && <span className="badge badge-blue">🕐 {fmt(item.availableFrom)}</span>}
         </div>
-        <div className="pc-media-price">KES {item.price.toLocaleString()}<span>/{item.unit}</span></div>
+        <div className="pc-media-price">{format(item.price)}<span>/{item.unit}</span></div>
       </div>
 
       <div className="pc-body">
@@ -47,7 +54,7 @@ export default function ProduceCard({ item }: Props) {
             <span className="pc-info-value">{item.quantityAvailable.toLocaleString()} {item.unit}</span>
           </div>
           <div className="pc-info-cell">
-            <span className="pc-info-label">EXPIRY</span>
+            <span className="pc-info-label">BEST BEFORE</span>
             <span className="pc-info-value">{fmt(item.expiryDate)}</span>
           </div>
           <div className="pc-info-cell">
@@ -69,7 +76,12 @@ export default function ProduceCard({ item }: Props) {
             <span className="pc-rating-sub">{item.farmerOrdersFulfilled} orders</span>
           </div>
         </div>
+
+        <div className="pc-actions">
+          <button className="btn btn-buy btn-sm pc-buy" onClick={stop(() => go())}>Buy now</button>
+          <button className="btn btn-outline btn-sm pc-bid" onClick={stop(() => go('?kind=Limit'))}>Bid</button>
+        </div>
       </div>
-    </Link>
+    </div>
   );
 }

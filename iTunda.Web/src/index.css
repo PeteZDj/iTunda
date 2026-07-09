@@ -92,6 +92,12 @@ a { color: var(--primary); }
 .btn-lg { padding: 16px 34px; font-size: 16px; }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 
+/* Trade actions — buy (green) / sell (gold) reused across the app */
+.btn-buy { background: var(--green-600); color: #fff; box-shadow: 0 6px 16px rgba(18, 131, 63, 0.3); }
+.btn-buy:hover { background: var(--green-700); }
+.btn-sell { background: #b91c1c; color: #fff; box-shadow: 0 6px 16px rgba(185, 28, 28, 0.28); }
+.btn-sell:hover { background: #a01818; }
+
 /* ── Cards ───────────────────────────────────────────────── */
 .card {
   background: var(--card);

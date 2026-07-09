@@ -31,6 +31,9 @@ public record BuyOrderResponse(
     string Unit,
     double Quantity,
     decimal TargetPrice,
+    string Side,
+    string Kind,
+    DateTime? ContractDate,
     string? Region,
     string? Country,
     string? CountryCode,
@@ -56,7 +59,10 @@ public record CreateBuyOrderRequest(
     string BuyerName,
     string? BuyerContact,
     bool ExportRequired,
-    DateTime? NeededBy);
+    DateTime? NeededBy,
+    string? Side = "Buy",
+    string? Kind = "Limit",
+    DateTime? ContractDate = null);
 
 public record DeliveryEstimateRequest(
     double OriginLat,

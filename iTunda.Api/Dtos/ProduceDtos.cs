@@ -9,6 +9,7 @@ public record ProduceResponse(
     string Unit,
     double QuantityAvailable,
     string? ImagePath,
+    DateTime? PlantingDate,
     DateTime? HarvestDate,
     DateTime? ExpiryDate,
     DateTime? AvailableFrom,
@@ -46,4 +47,8 @@ public record CreateProduceRequest(
     DateTime? ExpiryDate,
     DateTime? AvailableFrom,
     bool IsExportReady = false,
-    string? GradeQuality = null);
+    string? GradeQuality = null,
+    DateTime? PlantingDate = null,
+    double? FarmLatitude = null,
+    double? FarmLongitude = null,
+    List<string>? Images = null);

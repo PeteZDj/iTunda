@@ -17,6 +17,7 @@ export interface ProduceResponse {
   unit: string;
   quantityAvailable: number;
   imagePath: string | null;
+  plantingDate: string | null;
   harvestDate: string | null;
   expiryDate: string | null;
   availableFrom: string | null;
@@ -120,6 +121,9 @@ export interface CommodityDto {
   listings: number;
 }
 
+export type OrderSide = 'Buy' | 'Sell';
+export type OrderKind = 'Spot' | 'Limit' | 'Futures' | 'Put';
+
 export interface BuyOrderResponse {
   id: number;
   commodity: string;
@@ -128,6 +132,9 @@ export interface BuyOrderResponse {
   unit: string;
   quantity: number;
   targetPrice: number;
+  side: OrderSide;
+  kind: OrderKind;
+  contractDate: string | null;
   region: string | null;
   country: string | null;
   countryCode: string | null;
@@ -155,6 +162,9 @@ export interface CreateBuyOrderRequest {
   buyerContact?: string | null;
   exportRequired: boolean;
   neededBy?: string | null;
+  side?: OrderSide;
+  kind?: OrderKind;
+  contractDate?: string | null;
 }
 
 export interface DeliveryEstimateRequest {

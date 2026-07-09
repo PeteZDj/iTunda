@@ -9,8 +9,13 @@ public enum BuyOrderStatus
 }
 
 /// <summary>
-/// A commodity-style buy order (bid): a buyer posts the commodity, quantity and
-/// target price they want to purchase at. Sellers/farmers can match against it.
+/// A commodity-style order on the exchange book. Despite the name it now covers
+/// both sides (Buy/Sell) and several instrument kinds so the platform behaves
+/// like a farmer-to-futures desk:
+///   • Spot    — buy/sell at market now
+///   • Limit   — a resting bid/offer at <see cref="TargetPrice"/>
+///   • Futures — a forward contract to be delivered by <see cref="ContractDate"/>
+///   • Put     — a price-floor option with strike <see cref="TargetPrice"/> expiring <see cref="ContractDate"/>
 /// </summary>
 public class BuyOrder
 {
@@ -22,6 +27,15 @@ public class BuyOrder
     public string Unit { get; set; } = "kg";
     public double Quantity { get; set; }
     public decimal TargetPrice { get; set; }
+
+    /// <summary>Buy | Sell.</summary>
+    public string Side { get; set; } = "Buy";
+
+    /// <summary>Spot | Limit | Futures | Put.</summary>
+    public string Kind { get; set; } = "Limit";
+
+    /// <summary>Delivery month for futures / expiry for options.</summary>
+    public DateTime? ContractDate { get; set; }
 
     // Where the buyer wants to source from / deliver to
     public string? Region { get; set; }

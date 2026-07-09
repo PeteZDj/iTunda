@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMyOrders, getFarmerOrders } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import type { OrderResponse } from '../types';
 import './OrdersPage.css';
 
@@ -16,6 +17,7 @@ function fmt(d: string) {
 
 export default function OrdersPage() {
   const { role, isLoggedIn } = useAuth();
+  const { format } = useCurrency();
   const [orders, setOrders] = useState<OrderResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -67,7 +69,7 @@ export default function OrdersPage() {
                 <div key={i} className="order-item-row">
                   <span className="order-item-name">{item.produceName}</span>
                   <span className="order-item-qty">× {item.quantity.toLocaleString()}</span>
-                  <span className="order-item-price">KES {(item.unitPriceAtOrder * item.quantity).toLocaleString()}</span>
+                  <span className="order-item-price">{format(item.unitPriceAtOrder * item.quantity)}</span>
                 </div>
               ))}
             </div>
@@ -76,7 +78,7 @@ export default function OrdersPage() {
               {order.deliveryAddress && (
                 <span className="order-address">📍 {order.deliveryAddress}</span>
               )}
-              <span className="order-total">Total: KES {order.totalAmount.toLocaleString()}</span>
+              <span className="order-total">Total: {format(order.totalAmount)}</span>
             </div>
           </div>
         ))}

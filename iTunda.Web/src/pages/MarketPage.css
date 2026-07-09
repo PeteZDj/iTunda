@@ -47,9 +47,31 @@
 }
 .mk-summary-main { display: flex; align-items: center; gap: 12px; }
 .mk-summary-icon { width: 40px; height: 40px; }
+.mk-summary-emoji { font-size: 34px; line-height: 1; }
 .mk-summary-main h2 { font-family: var(--font-head); font-size: 20px; color: var(--primary-dark); }
 .mk-summary-listings { font-size: 13px; color: var(--muted); }
 .mk-summary-stats { display: flex; gap: 22px; margin-left: auto; }
+.mk-summary-actions { display: flex; gap: 8px; }
+.mk-summary-actions .btn { min-width: 66px; font-weight: 800; letter-spacing: 0.5px; }
+
+/* Trade ticket wrapper */
+.mk-ticket-wrap { max-width: 460px; margin: 0 0 20px; }
+.mk-ticket-close { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+
+/* Order kind badge */
+.mk-kind {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.4px; padding: 1px 5px; border-radius: 4px;
+  vertical-align: middle; margin-left: 4px;
+}
+.mk-kind.spot { background: #e2e8f0; color: #475569; }
+.mk-kind.limit { background: #dbeafe; color: #1d4ed8; }
+.mk-kind.futures { background: #ede9fe; color: #6d28d9; }
+.mk-kind.put { background: #fef3c7; color: #b45309; }
+
+.mk-buy-tag {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.4px; padding: 2px 7px; border-radius: 999px;
+  background: var(--green-600); color: #fff; margin-top: 3px;
+}
 .mk-summary-stats > div { display: flex; flex-direction: column; }
 .mk-stat-l { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 700; }
 .mk-stat-v { font-size: 15px; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }

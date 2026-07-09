@@ -22,6 +22,20 @@ public static class Media
         ["Onions"]             = ("onion,harvest",    "1f9c5"),
         ["Capsicum & Peppers"] = ("bell,pepper",      "1fad1"),
         ["Roses"]              = ("roses,flowers",    "1f339"),
+        // ── Expanded global commodity set ───────────────────────────────────
+        ["Coffee"]             = ("coffee,beans",     "2615"),
+        ["Apples"]             = ("apple,orchard",    "1f34e"),
+        ["Pineapples"]         = ("pineapple",        "1f34d"),
+        ["Oranges"]            = ("orange,citrus",    "1f34a"),
+        ["Grapes"]             = ("grapes,vineyard",  "1f347"),
+        ["Lemons & Limes"]     = ("lemon,lime",       "1f34b"),
+        ["Strawberries"]       = ("strawberry",       "1f353"),
+        ["Cashew Nuts"]        = ("cashew,nuts",      "1f95c"),
+        ["Cocoa"]              = ("cocoa,beans",      "1f36b"),
+        ["Vanilla"]            = ("vanilla,pods",     "1f33c"),
+        ["Ginger"]             = ("ginger,root",      "1fada"),
+        ["Green Chillies"]     = ("chilli,pepper",    "1f336"),
+        ["Sweet Potatoes"]     = ("sweet,potato",     "1f360"),
     };
 
     private const string TwemojiBase = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.0.3/assets/72x72/";

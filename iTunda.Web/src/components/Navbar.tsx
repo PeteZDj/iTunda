@@ -14,6 +14,8 @@ export default function Navbar() {
 
   const active = (path: string) => location.pathname === path ? 'nav-link active' : 'nav-link';
 
+  const sellHref = role === 'Farmer' ? '/dashboard' : '/register';
+
   return (
     <nav className="navbar">
       <div className="navbar-inner page-container">
@@ -31,8 +33,14 @@ export default function Navbar() {
           <Link to="/market" className={active('/market')} onClick={() => setMenuOpen(false)}>Market</Link>
           <Link to="/delivery" className={active('/delivery')} onClick={() => setMenuOpen(false)}>Delivery</Link>
           <Link to="/farmers" className={active('/farmers')} onClick={() => setMenuOpen(false)}>Farmers</Link>
+          <Link to="/downloads" className={active('/downloads')} onClick={() => setMenuOpen(false)}>
+            <span className="nav-dl">⬇ Get the App</span>
+          </Link>
 
           <RegionSelector />
+
+          <Link to={sellHref} className="btn btn-sell btn-sm" onClick={() => setMenuOpen(false)}>＋ Sell</Link>
+          <Link to="/market" className="btn btn-buy btn-sm" onClick={() => setMenuOpen(false)}>⇅ Trade</Link>
 
           {isLoggedIn ? (
             <>

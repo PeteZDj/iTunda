@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getProduceById, createOrder } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { getProduceById } from '../services/api';
 import { flagUrl } from '../lib/geo';
+import { useCurrency } from '../context/CurrencyContext';
 import LeafletMap, { type MapMarker } from '../components/LeafletMap';
-import type { ProduceResponse } from '../types';
+import TradeTicket from '../components/TradeTicket';
+import type { ProduceResponse, OrderKind, OrderSide } from '../types';
 import './ProduceDetailPage.css';
 
 function fmt(d: string | null) {
@@ -14,17 +15,12 @@ function fmt(d: string | null) {
 
 export default function ProduceDetailPage() {
   const { id } = useParams();
+  const [params] = useSearchParams();
   const [item, setItem] = useState<ProduceResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeImg, setActiveImg] = useState(0);
-  const [qty, setQty] = useState('50');
-  const [address, setAddress] = useState('');
-  const [ordering, setOrdering] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
-  const [orderError, setOrderError] = useState('');
-  const { isLoggedIn } = useAuth();
-  const navigate = useNavigate();
+  const { format } = useCurrency();
 
   useEffect(() => {
     if (!id) return;
@@ -35,26 +31,14 @@ export default function ProduceDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleOrder = async () => {
-    if (!isLoggedIn) { navigate('/login'); return; }
-    if (!address.trim()) { setOrderError('Please enter a delivery address.'); return; }
-    const q = parseFloat(qty);
-    if (!q || q <= 0) { setOrderError('Please enter a valid quantity.'); return; }
-    setOrdering(true);
-    setOrderError('');
-    try {
-      await createOrder({ deliveryAddress: address, items: [{ produceId: item!.id, quantity: q }] });
-      setOrderSuccess(true);
-    } catch (err: any) {
-      setOrderError(err?.response?.data || 'Order failed. Please try again.');
-    } finally { setOrdering(false); }
-  };
-
   if (loading) return <div className="spinner" style={{ marginTop: 80 }} />;
   if (error || !item) return <div className="alert alert-error" style={{ margin: 40 }}>{error || 'Not found'}</div>;
 
   const isScheduled = item.availableFrom && new Date(item.availableFrom) > new Date();
   const images = [item.imageUrl, ...item.gallery].filter(Boolean);
+
+  const initialKind = (params.get('kind') as OrderKind) || 'Spot';
+  const initialSide = (params.get('side') as OrderSide) || 'Buy';
 
   // Farm + distributor collection hub + suggested meet-up point for the map.
   const hasGeo = item.farmLatitude != null && item.farmLongitude != null;
@@ -108,7 +92,7 @@ export default function ProduceDetailPage() {
               </div>
             </div>
             <div className="detail-price">
-              KES {item.price.toLocaleString()}<span>/ {item.unit}</span>
+              {format(item.price)}<span>/ {item.unit}</span>
             </div>
           </div>
           {isScheduled && <div className="detail-scheduled">🕐 Available from {fmt(item.availableFrom)}</div>}
@@ -117,10 +101,10 @@ export default function ProduceDetailPage() {
           <div className="detail-info-grid card" style={{ marginTop: 16 }}>
             {[
               ['Quantity Available', `${item.quantityAvailable.toLocaleString()} ${item.unit}`],
+              ['Planted', fmt(item.plantingDate)],
               ['Harvest Date', fmt(item.harvestDate)],
-              ['Expiry Date', fmt(item.expiryDate)],
+              ['Best Before', fmt(item.expiryDate)],
               ['Grade / Quality', item.gradeQuality ?? 'Standard'],
-              ['Unit', item.unit.toUpperCase()],
               ['Export Ready', item.isExportReady ? 'Yes ✓' : 'No'],
             ].map(([label, value]) => (
               <div key={label} className="info-cell">
@@ -182,62 +166,27 @@ export default function ProduceDetailPage() {
           </div>
         </div>
 
-        {/* Right: order panel */}
+        {/* Right: trade ticket */}
         <div className="order-panel">
-          <div className="card order-card">
-            <h3 className="card-section-title">Place Order</h3>
-            {orderSuccess ? (
-              <div>
-                <div className="alert alert-success">🎉 Order placed successfully!</div>
-                <Link to="/orders" className="btn btn-primary" style={{ marginTop: 16, width: '100%', justifyContent: 'center', borderRadius: 8 }}>
-                  View My Orders →
-                </Link>
-              </div>
-            ) : (
-              <>
-                <div className="order-price-display">
-                  <span className="order-price-big">KES {item.price.toLocaleString()}</span>
-                  <span className="order-price-unit">per {item.unit}</span>
-                </div>
-
-                {orderError && <div className="alert alert-error">{orderError}</div>}
-
-                <div className="field-group">
-                  <label className="field-label">Quantity ({item.unit})</label>
-                  <input className="input" type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} />
-                </div>
-                {qty && !isNaN(Number(qty)) && (
-                  <div className="order-total">
-                    Total: <strong>KES {(item.price * Number(qty)).toLocaleString()}</strong>
-                  </div>
-                )}
-                <div className="field-group">
-                  <label className="field-label">Delivery Address</label>
-                  <textarea className="input textarea" value={address} onChange={e => setAddress(e.target.value)} placeholder="Enter your delivery address…" rows={3} />
-                </div>
-
-                {isLoggedIn ? (
-                  <button className="btn btn-amber" disabled={ordering}
-                    style={{ width: '100%', justifyContent: 'center', borderRadius: 8 }}
-                    onClick={handleOrder}>
-                    {ordering ? 'Placing order…' : '🛒 Place Order'}
-                  </button>
-                ) : (
-                  <Link to="/login" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', borderRadius: 8 }}>
-                    Sign In to Order
-                  </Link>
-                )}
-
-                <Link to="/delivery" className="btn btn-outline btn-sm" style={{ width: '100%', justifyContent: 'center', borderRadius: 8, marginTop: 10 }}>
-                  🚚 Estimate delivery & route
-                </Link>
-
-                <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 12, textAlign: 'center' }}>
-                  Secure order · Delivery tracking included
-                </p>
-              </>
-            )}
-          </div>
+          <TradeTicket
+            ctx={{
+              commodity: item.category,
+              unit: item.unit,
+              referencePriceKes: item.price,
+              region: item.region,
+              country: item.country,
+              countryCode: item.countryCode,
+              zone: item.zone,
+              variety: item.name,
+              grade: item.gradeQuality,
+              produceId: item.id,
+            }}
+            initialSide={initialSide}
+            initialKind={initialKind}
+          />
+          <Link to="/delivery" className="btn btn-outline btn-sm" style={{ width: '100%', justifyContent: 'center', borderRadius: 8, marginTop: 12 }}>
+            🚚 Estimate delivery & route
+          </Link>
         </div>
       </div>
     </div>

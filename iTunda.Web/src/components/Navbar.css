@@ -36,10 +36,10 @@
 }
 .nav-logo-text b { color: #ffd572; font-weight: 800; }
 
-.nav-links { display: flex; align-items: center; gap: 6px; }
+.nav-links { display: flex; align-items: center; gap: 5px; }
 
 .nav-link {
-  padding: 8px 15px;
+  padding: 8px 13px;
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.82);
   text-decoration: none;
@@ -47,6 +47,15 @@
   font-weight: 600;
   transition: background 0.15s, color 0.15s;
 }
+
+.nav-dl {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #ffd572;
+  font-weight: 700;
+}
+.nav-links .btn-sm { padding: 8px 14px; }
 .nav-link:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
 .nav-link.active { background: rgba(255, 255, 255, 0.16); color: #ffd572; }
 

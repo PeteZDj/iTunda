@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { estimateDelivery } from '../services/api';
 import { useRegion } from '../context/RegionContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { flagUrl } from '../lib/geo';
 import LeafletMap, { type MapMarker } from '../components/LeafletMap';
 import type { DeliveryEstimateResponse } from '../types';
@@ -24,6 +25,7 @@ const HUBS: Loc[] = [
 
 export default function DeliveryPage() {
   const { regions } = useRegion();
+  const { format, currency } = useCurrency();
 
   const locations: Loc[] = useMemo(() => [
     ...regions.map(r => ({ id: `r:${r.name}`, label: r.name, sub: `${r.country} · Zone ${r.zone}`, lat: r.lat, lng: r.lng, cc: r.countryCode })),
@@ -149,16 +151,18 @@ export default function DeliveryPage() {
                 </div>
 
                 <div className="dl-price">
-                  <span className="dl-price-big">KES {result.priceKes.toLocaleString()}</span>
-                  <span className="dl-price-usd">≈ US$ {result.priceUsd.toLocaleString()}</span>
+                  <span className="dl-price-big">{format(result.priceKes)}</span>
+                  <span className="dl-price-usd">
+                    {currency === 'KES' ? `≈ US$ ${result.priceUsd.toLocaleString()}` : `≈ KES ${result.priceKes.toLocaleString()}`}
+                  </span>
                 </div>
                 <div className="dl-mode">{result.mode}</div>
 
                 <div className="dl-metrics">
                   <div><span className="dl-m-l">Distance</span><span className="dl-m-v">{result.distanceKm.toLocaleString()} km</span></div>
                   <div><span className="dl-m-l">Transit</span><span className="dl-m-v">{result.etaHours} h</span></div>
-                  <div><span className="dl-m-l">Base fee</span><span className="dl-m-v">KES {result.baseFee.toLocaleString()}</span></div>
-                  <div><span className="dl-m-l">Per km</span><span className="dl-m-v">KES {result.perKm.toLocaleString()}</span></div>
+                  <div><span className="dl-m-l">Base fee</span><span className="dl-m-v">{format(result.baseFee)}</span></div>
+                  <div><span className="dl-m-l">Per km</span><span className="dl-m-v">{format(result.perKm)}</span></div>
                 </div>
 
                 <a href={result.googleMapsUrl} target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>

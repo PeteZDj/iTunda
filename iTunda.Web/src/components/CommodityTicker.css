@@ -25,6 +25,18 @@
   white-space: nowrap;
   flex-shrink: 0;
   z-index: 2;
+  border: none;
+  cursor: pointer;
+}
+.tk-tag:hover { filter: brightness(1.06); }
+
+.tk-ccy {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  flex-shrink: 0;
+  z-index: 4;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 .tk-dot {
   width: 7px; height: 7px; border-radius: 50%;
@@ -63,15 +75,20 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 0 6px;
+  padding: 3px 8px;
+  margin: 0 1px;
   background: none;
   border: none;
+  border-radius: 6px;
   color: #eafff1;
   font-family: var(--font-body);
   font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.12s;
 }
+.tk-item:hover { background: rgba(255, 255, 255, 0.12); }
+.tk-item:hover .tk-name { text-decoration: underline; }
 .tk-icon { width: 18px; height: 18px; }
 .tk-name { font-weight: 600; }
 .tk-price { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }

@@ -29,6 +29,9 @@ dist-ssr/
 *.err.log
 npm-debug.log*
 
+## Android APK artifact (distributed via the live site + GitHub Releases, not committed)
+iTunda.Web/public/dl/*.apk
+
 ## OS
 .DS_Store
 Thumbs.db

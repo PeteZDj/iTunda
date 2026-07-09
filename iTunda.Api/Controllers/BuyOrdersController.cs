@@ -18,6 +18,7 @@ public class BuyOrdersController : ControllerBase
 
     private static BuyOrderResponse ToResponse(BuyOrder b) => new(
         b.Id, b.Commodity, b.Variety, b.Grade, b.Unit, b.Quantity, b.TargetPrice,
+        b.Side, b.Kind, b.ContractDate,
         b.Region, b.Country, b.CountryCode, b.Zone, b.BuyerName, b.ExportRequired,
         b.Status.ToString(), b.CreatedAt, b.NeededBy, Media.IconUrl(b.Commodity));
 
@@ -25,7 +26,9 @@ public class BuyOrdersController : ControllerBase
     public async Task<ActionResult<List<BuyOrderResponse>>> GetAll(
         [FromQuery] string? commodity,
         [FromQuery] int? zone,
-        [FromQuery] string? country)
+        [FromQuery] string? country,
+        [FromQuery] string? side,
+        [FromQuery] string? kind)
     {
         var query = _db.BuyOrders.AsQueryable();
 
@@ -35,6 +38,10 @@ public class BuyOrdersController : ControllerBase
             query = query.Where(b => b.Zone == zone.Value);
         if (!string.IsNullOrWhiteSpace(country))
             query = query.Where(b => b.Country == country);
+        if (!string.IsNullOrWhiteSpace(side))
+            query = query.Where(b => b.Side == side);
+        if (!string.IsNullOrWhiteSpace(kind))
+            query = query.Where(b => b.Kind == kind);
 
         var items = await query
             .OrderByDescending(b => b.Status == BuyOrderStatus.Open)
@@ -54,6 +61,9 @@ public class BuyOrdersController : ControllerBase
         if (request.Quantity <= 0 || request.TargetPrice <= 0)
             return BadRequest("Quantity and target price must be greater than zero.");
 
+        var side = request.Side == "Sell" ? "Sell" : "Buy";
+        var kind = request.Kind is "Spot" or "Limit" or "Futures" or "Put" ? request.Kind : "Limit";
+
         var order = new BuyOrder
         {
             Commodity = request.Commodity,
@@ -62,6 +72,9 @@ public class BuyOrdersController : ControllerBase
             Unit = string.IsNullOrWhiteSpace(request.Unit) ? "kg" : request.Unit,
             Quantity = request.Quantity,
             TargetPrice = request.TargetPrice,
+            Side = side,
+            Kind = kind,
+            ContractDate = request.ContractDate,
             Region = request.Region,
             Country = request.Country,
             CountryCode = request.CountryCode,

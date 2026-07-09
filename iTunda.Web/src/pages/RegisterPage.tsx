@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import { register } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
@@ -13,6 +14,27 @@ export default function RegisterPage() {
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: k === 'role' ? Number(e.target.value) : e.target.value }));
+
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return;
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/gauth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+      if (!res.ok) throw new Error('failed');
+      const data = await res.json();
+      setSession({ token: data.token, userId: 0, name: data.user.name, email: data.user.email, role: 'Buyer' });
+      navigate('/browse');
+    } catch {
+      setError('Google sign-up failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,10 +56,10 @@ export default function RegisterPage() {
       <div className="auth-left">
         <div className="auth-left-content">
           <div className="auth-brand">🌿 iTunda</div>
-          <h1 className="auth-headline">Join Kenya's largest produce marketplace</h1>
+          <h1 className="auth-headline">Join the global farm-to-fork exchange</h1>
           <p className="auth-tagline">Whether you grow it or source it — iTunda connects you</p>
           <div className="auth-features">
-            {['Free to join','Post unlimited listings as a Farmer','Order from multiple farms at once','Delivery tracking built-in'].map(f => (
+            {['Free to join','Post unlimited listings as a Farmer','Buy, bid & trade futures across 4 export zones','Delivery routing & tracking built-in'].map(f => (
               <div key={f} className="auth-feature">✓ {f}</div>
             ))}
           </div>
@@ -50,6 +72,18 @@ export default function RegisterPage() {
           <p className="auth-subtitle">Free forever. No credit card needed.</p>
 
           {error && <div className="alert alert-error">{error}</div>}
+
+          <div className="google-signin-wrap">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google sign-up failed. Please try again.')}
+              width="100%"
+              text="signup_with"
+              shape="rectangular"
+            />
+          </div>
+
+          <div className="auth-divider"><span>or sign up with email</span></div>
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="field-group">

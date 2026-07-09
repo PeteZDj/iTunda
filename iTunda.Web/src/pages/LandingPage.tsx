@@ -2,15 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getCategories, getProduce, getRegions } from '../services/api';
 import { useRegion } from '../context/RegionContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { flagUrl } from '../lib/geo';
+import { CATEGORY_ICONS } from '../lib/categories';
 import type { ProduceResponse, RegionDto } from '../types';
 import './LandingPage.css';
-
-const CATEGORY_ICONS: Record<string, string> = {
-  'Avocados': '🥑', 'Macadamia Nuts': '🌰', 'French Beans': '🫛', 'Tea': '🍵',
-  'Peas & Mange Tout': '🫛', 'Passion Fruit': '🍈', 'Mangoes': '🥭', 'Bananas': '🍌',
-  'Tomatoes': '🍅', 'Onions': '🧅', 'Capsicum & Peppers': '🫑', 'Roses': '🌹',
-};
 
 function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
   const [val, setVal] = useState(0);
@@ -46,6 +42,7 @@ export default function LandingPage() {
   const [featured, setFeatured] = useState<ProduceResponse[]>([]);
   const [regions, setRegions] = useState<RegionDto[]>([]);
   const { setRegion } = useRegion();
+  const { format } = useCurrency();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -213,7 +210,7 @@ export default function LandingPage() {
                       <div className="featured-farm">{item.farmName}</div>
                     </div>
                   </div>
-                  <div className="featured-price">KES {item.price.toLocaleString()}/{item.unit}</div>
+                  <div className="featured-price">{format(item.price)}/{item.unit}</div>
                   <div className="featured-meta">
                     <span><img className="pc-flag" src={flagUrl(item.countryCode)} alt="" /> {item.region}</span>
                     <span>★ {item.farmerRating.toFixed(1)}</span>

@@ -125,7 +125,10 @@ public static class SeedData
         {
             "Avocados", "Macadamia Nuts", "French Beans", "Tea",
             "Peas & Mange Tout", "Passion Fruit", "Mangoes", "Bananas",
-            "Tomatoes", "Onions", "Capsicum & Peppers", "Roses"
+            "Tomatoes", "Onions", "Capsicum & Peppers", "Roses",
+            "Coffee", "Apples", "Pineapples", "Oranges", "Grapes",
+            "Lemons & Limes", "Strawberries", "Cashew Nuts", "Cocoa",
+            "Vanilla", "Ginger", "Green Chillies", "Sweet Potatoes"
         };
 
         var catDetails = new Dictionary<string, (string unit, decimal minP, decimal maxP, double minQ, double maxQ, string[] varieties, string[] grades)>
@@ -142,6 +145,19 @@ public static class SeedData
             ["Onions"]           = ("kg",  30, 70, 200, 8000, new[]{"Red Creole", "White Onion", "Spring Onion", "Shallots"}, new[]{"Grade A", "Grade B", "Dry Onion"}),
             ["Capsicum & Peppers"]= ("kg", 100, 200, 50, 1000, new[]{"Red Capsicum", "Yellow Capsicum", "Green Capsicum", "Chilli"}, new[]{"Grade A", "Export Grade", "Premium"}),
             ["Roses"]            = ("stem",  8, 25, 500, 50000, new[]{"Red Naomi", "Pink Avalanche", "White O'Hara", "Yellow Texas"}, new[]{"Grade A", "Grade AA", "Premium", "Select"}),
+            ["Coffee"]           = ("kg", 350, 900, 60, 4000, new[]{"Arabica SL28", "Arabica SL34", "Ruiru 11", "Bourbon", "Robusta"}, new[]{"AA", "AB", "Specialty", "Grade 1"}),
+            ["Apples"]           = ("kg",  70, 160, 100, 4000, new[]{"Golden Delicious", "Granny Smith", "Royal Gala", "Fuji"}, new[]{"Grade A", "Grade B", "Class 1", "Premium"}),
+            ["Pineapples"]       = ("kg",  45, 110, 100, 3000, new[]{"MD2 Sweet Gold", "Smooth Cayenne", "Queen Victoria"}, new[]{"Grade A", "Export Grade", "Class 1"}),
+            ["Oranges"]          = ("kg",  40, 100, 150, 6000, new[]{"Valencia", "Navel", "Washington", "Blood Orange"}, new[]{"Grade A", "Grade B", "Class 1", "Juice Grade"}),
+            ["Grapes"]           = ("kg", 120, 320, 50, 2000, new[]{"Thompson Seedless", "Crimson", "Red Globe", "Flame"}, new[]{"Grade A", "Export Grade", "Premium"}),
+            ["Lemons & Limes"]   = ("kg",  60, 150, 80, 3000, new[]{"Eureka Lemon", "Lisbon Lemon", "Tahiti Lime", "Persian Lime"}, new[]{"Grade A", "Class 1", "Juice Grade"}),
+            ["Strawberries"]     = ("kg", 180, 420, 30, 1000, new[]{"Chandler", "Albion", "Camarosa", "Festival"}, new[]{"Grade A", "Premium", "Class 1"}),
+            ["Cashew Nuts"]      = ("kg", 320, 720, 40, 1500, new[]{"W240", "W320", "Raw In-Shell", "Roasted Kernel"}, new[]{"W240", "W320", "Grade 1", "Premium"}),
+            ["Cocoa"]            = ("kg", 260, 560, 100, 5000, new[]{"Criollo", "Forastero", "Trinitario", "Fermented Beans"}, new[]{"Grade 1", "Grade 2", "Fine Flavour"}),
+            ["Vanilla"]          = ("kg", 3500, 9000, 5, 200, new[]{"Bourbon", "Grade A Gourmet", "Grade B Extract"}, new[]{"Gourmet", "Extract", "Grade A", "Grade B"}),
+            ["Ginger"]           = ("kg",  90, 220, 80, 3000, new[]{"Fresh Rhizome", "Organic", "Dried"}, new[]{"Grade A", "Export Grade", "Organic"}),
+            ["Green Chillies"]   = ("kg",  80, 200, 40, 1200, new[]{"Bird's Eye", "Cayenne", "Jalapeño", "Serrano"}, new[]{"Grade A", "Export Grade", "Class 1"}),
+            ["Sweet Potatoes"]   = ("kg",  35, 90, 150, 6000, new[]{"Orange Flesh", "Purple", "White", "Beauregard"}, new[]{"Grade A", "Grade B", "Class 1"}),
         };
 
         var listings = new List<Produce>();
@@ -157,6 +173,7 @@ public static class SeedData
 
             var harvestDaysAgo = rng.Next(0, 30);
             var harvestDate = now.AddDays(-harvestDaysAgo);
+            var plantingDate = harvestDate.AddDays(-rng.Next(75, 320));
             var expiryDays = cat == "Roses" ? rng.Next(7, 21) : rng.Next(14, 61);
             var expiryDate = harvestDate.AddDays(expiryDays);
 
@@ -175,6 +192,7 @@ public static class SeedData
                 Price = price,
                 Unit = det.unit,
                 QuantityAvailable = qty,
+                PlantingDate = plantingDate,
                 HarvestDate = harvestDate,
                 ExpiryDate = expiryDate,
                 AvailableFrom = availableFrom,
@@ -195,18 +213,25 @@ public static class SeedData
             "Dubai Gulf Foods", "Hamburg Import GmbH", "Mombasa Export House", "Paris Primeurs",
         };
 
+        var kinds = new[] { "Spot", "Limit", "Limit", "Futures", "Futures", "Put" };
         var buyOrders = new List<BuyOrder>();
-        for (int i = 0; i < 26; i++)
+        for (int i = 0; i < 60; i++)
         {
             var region = RegionData.All[rng.Next(RegionData.All.Length)];
             var cat = region.Crops[rng.Next(region.Crops.Length)];
             var det = catDetails[cat];
             var variety = det.varieties[rng.Next(det.varieties.Length)];
             var grade = det.grades[rng.Next(det.grades.Length)];
-            // Bid a touch under mid-market to feel like a commodity order book
             var mid = (det.minP + det.maxP) / 2m;
-            var target = Math.Round(mid * (decimal)(0.9 + rng.NextDouble() * 0.15), 0);
             var qty = Math.Round(det.minQ * 3 + rng.NextDouble() * (det.maxQ - det.minQ), 0);
+
+            // Mostly buy-side bids, some farmer sell-side offers.
+            var side = rng.Next(10) < 7 ? "Buy" : "Sell";
+            var kind = kinds[rng.Next(kinds.Length)];
+            // Buyers bid below mid; sellers offer above mid — a realistic book.
+            var factor = side == "Buy" ? 0.88 + rng.NextDouble() * 0.14 : 1.02 + rng.NextDouble() * 0.16;
+            var target = Math.Round(mid * (decimal)factor, 0);
+            DateTime? contractDate = kind is "Futures" or "Put" ? now.AddMonths(rng.Next(1, 7)) : null;
 
             buyOrders.Add(new BuyOrder
             {
@@ -216,12 +241,15 @@ public static class SeedData
                 Unit = det.unit,
                 Quantity = qty,
                 TargetPrice = target,
+                Side = side,
+                Kind = kind,
+                ContractDate = contractDate,
                 Region = region.Name,
                 Country = region.Country,
                 CountryCode = region.CountryCode,
                 Zone = region.Zone,
-                BuyerName = buyerNames[rng.Next(buyerNames.Length)],
-                BuyerContact = "procurement@buyer.example",
+                BuyerName = side == "Buy" ? buyerNames[rng.Next(buyerNames.Length)] : profiles[rng.Next(profiles.Count)].FarmName,
+                BuyerContact = "desk@itunda.example",
                 ExportRequired = rng.Next(10) < 6,
                 Status = rng.Next(10) < 8 ? BuyOrderStatus.Open : BuyOrderStatus.Matched,
                 CreatedAt = now.AddDays(-rng.Next(0, 20)),

@@ -11,7 +11,9 @@ public class CategoriesController : ControllerBase
     public static readonly string[] KenyanExportCategories = new[]
     {
         "Avocados", "Macadamia Nuts", "French Beans", "Tea", "Peas & Mange Tout",
-        "Passion Fruit", "Mangoes", "Bananas", "Tomatoes", "Onions", "Capsicum & Peppers", "Roses"
+        "Passion Fruit", "Mangoes", "Bananas", "Tomatoes", "Onions", "Capsicum & Peppers", "Roses",
+        "Coffee", "Apples", "Pineapples", "Oranges", "Grapes", "Lemons & Limes", "Strawberries",
+        "Cashew Nuts", "Cocoa", "Vanilla", "Ginger", "Green Chillies", "Sweet Potatoes"
     };
 
     private readonly ItundaDbContext _db;

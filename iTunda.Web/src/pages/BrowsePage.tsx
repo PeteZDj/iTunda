@@ -3,6 +3,7 @@ import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { getProduce, getCategories } from '../services/api';
 import { useRegion } from '../context/RegionContext';
 import { flagUrl, ZONES } from '../lib/geo';
+import { categoryIcon } from '../lib/categories';
 import type { ProduceResponse } from '../types';
 import ProduceCard from '../components/ProduceCard';
 import './BrowsePage.css';
@@ -19,6 +20,7 @@ export default function BrowsePage() {
   const [error, setError] = useState('');
 
   const [q, setQ] = useState(params.get('q') ?? '');
+  const [catFilter, setCatFilter] = useState('');
   const [exportOnly, setExportOnly] = useState(false);
   const [includeFuture, setIncludeFuture] = useState(false);
 
@@ -76,11 +78,23 @@ export default function BrowsePage() {
 
         <div className="sidebar-section">
           <h3 className="sidebar-heading">Category</h3>
-          <div className="sidebar-chips">
-            <button className={`chip ${!category ? 'active' : ''}`} onClick={() => applyCategory('')}>All</button>
-            {categories.map(c => (
-              <button key={c} className={`chip ${category === c ? 'active' : ''}`} onClick={() => applyCategory(c)}>{c}</button>
-            ))}
+          <input
+            className="input cat-filter"
+            placeholder="Filter categories…"
+            value={catFilter}
+            onChange={e => setCatFilter(e.target.value)}
+          />
+          <div className="sidebar-cats">
+            <button className={`cat-pill ${!category ? 'active' : ''}`} onClick={() => applyCategory('')}>
+              <span className="cat-emoji">🌍</span> All produce
+            </button>
+            {categories
+              .filter(c => c.toLowerCase().includes(catFilter.toLowerCase()))
+              .map(c => (
+                <button key={c} className={`cat-pill ${category === c ? 'active' : ''}`} onClick={() => applyCategory(c)}>
+                  <span className="cat-emoji">{categoryIcon(c)}</span> {c}
+                </button>
+              ))}
           </div>
         </div>
 

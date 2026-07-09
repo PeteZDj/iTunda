@@ -80,7 +80,7 @@ export const getCommodities = () =>
   client.get<CommodityDto[]>('/commodities').then(r => r.data);
 
 // Buy orders (commodity order book)
-export const getBuyOrders = (params?: { commodity?: string; zone?: number; country?: string }) =>
+export const getBuyOrders = (params?: { commodity?: string; zone?: number; country?: string; side?: string; kind?: string }) =>
   client.get<BuyOrderResponse[]>('/buyorders', { params }).then(r => r.data);
 
 export const createBuyOrder = (data: CreateBuyOrderRequest) =>

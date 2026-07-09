@@ -17,17 +17,39 @@ public class ProduceController : ControllerBase
 
     public ProduceController(ItundaDbContext db) => _db = db;
 
-    private static ProduceResponse ToResponse(Produce p) => new(
-        p.Id, p.Name, p.Category, p.Description, p.Price, p.Unit, p.QuantityAvailable,
-        p.ImagePath, p.HarvestDate, p.ExpiryDate, p.AvailableFrom, p.IsExportReady, p.GradeQuality,
-        p.FarmerProfileId,
-        p.FarmerProfile!.User!.Name, p.FarmerProfile.Phone, p.FarmerProfile.ImagePath,
-        p.FarmerProfile.FarmName,
-        p.FarmerProfile.LocationCounty, p.FarmerProfile.LocationSubCounty, p.FarmerProfile.LocationTown,
-        p.FarmerProfile.FarmLatitude, p.FarmerProfile.FarmLongitude,
-        p.FarmerProfile.RatingFarmer, p.FarmerProfile.OrdersFulfilled,
-        p.FarmerProfile.Region, p.FarmerProfile.Country, p.FarmerProfile.CountryCode, p.FarmerProfile.Zone,
-        Media.ImageUrl(p.Category, p.Id), Media.Gallery(p.Category, p.Id), Media.IconUrl(p.Category));
+    public static ProduceResponse ToResponse(Produce p)
+    {
+        // Prefer seller-uploaded photos (from the sell flow) over generated stock.
+        var uploaded = ParseImages(p.ImagesJson);
+        if (uploaded.Count == 0 && !string.IsNullOrWhiteSpace(p.ImagePath))
+            uploaded.Add(p.ImagePath!);
+
+        var hero = uploaded.Count > 0 ? uploaded[0] : Media.ImageUrl(p.Category, p.Id);
+        var gallery = uploaded.Count > 0 ? uploaded : Media.Gallery(p.Category, p.Id);
+
+        // Per-listing coordinates fall back to the farmer profile.
+        var lat = p.FarmLatitude ?? p.FarmerProfile!.FarmLatitude;
+        var lng = p.FarmLongitude ?? p.FarmerProfile!.FarmLongitude;
+
+        return new(
+            p.Id, p.Name, p.Category, p.Description, p.Price, p.Unit, p.QuantityAvailable,
+            p.ImagePath, p.PlantingDate, p.HarvestDate, p.ExpiryDate, p.AvailableFrom, p.IsExportReady, p.GradeQuality,
+            p.FarmerProfileId,
+            p.FarmerProfile!.User!.Name, p.FarmerProfile.Phone, p.FarmerProfile.ImagePath,
+            p.FarmerProfile.FarmName,
+            p.FarmerProfile.LocationCounty, p.FarmerProfile.LocationSubCounty, p.FarmerProfile.LocationTown,
+            lat, lng,
+            p.FarmerProfile.RatingFarmer, p.FarmerProfile.OrdersFulfilled,
+            p.FarmerProfile.Region, p.FarmerProfile.Country, p.FarmerProfile.CountryCode, p.FarmerProfile.Zone,
+            hero, gallery, Media.IconUrl(p.Category));
+    }
+
+    private static List<string> ParseImages(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return new();
+        try { return System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? new(); }
+        catch { return new(); }
+    }
 
     [HttpGet]
     public async Task<ActionResult<List<ProduceResponse>>> GetAll(
@@ -98,6 +120,20 @@ public class ProduceController : ControllerBase
         var farmerProfile = await _db.FarmerProfiles.FirstOrDefaultAsync(f => f.UserId == userId);
         if (farmerProfile is null) return BadRequest("Farmer profile not found.");
 
+        // Sellers must provide the essentials before a listing goes live.
+        var images = request.Images?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new();
+        if (images.Count == 0 && string.IsNullOrWhiteSpace(request.ImagePath))
+            return BadRequest("At least one produce photo is required.");
+        if (request.PlantingDate is null)
+            return BadRequest("Planting date is required.");
+        if (request.ExpiryDate is null)
+            return BadRequest("Best-before date is required.");
+
+        var lat = request.FarmLatitude ?? farmerProfile.FarmLatitude;
+        var lng = request.FarmLongitude ?? farmerProfile.FarmLongitude;
+        if (lat is null || lng is null)
+            return BadRequest("Farm location (GPS) is required.");
+
         var produce = new Produce
         {
             FarmerProfileId = farmerProfile.Id,
@@ -107,10 +143,14 @@ public class ProduceController : ControllerBase
             Price = request.Price,
             Unit = request.Unit,
             QuantityAvailable = request.QuantityAvailable,
-            ImagePath = request.ImagePath,
+            ImagePath = images.Count > 0 ? images[0] : request.ImagePath,
+            ImagesJson = images.Count > 0 ? System.Text.Json.JsonSerializer.Serialize(images) : null,
+            PlantingDate = request.PlantingDate,
             HarvestDate = request.HarvestDate,
             ExpiryDate = request.ExpiryDate,
             AvailableFrom = request.AvailableFrom,
+            FarmLatitude = lat,
+            FarmLongitude = lng,
             IsExportReady = request.IsExportReady,
             GradeQuality = request.GradeQuality
         };

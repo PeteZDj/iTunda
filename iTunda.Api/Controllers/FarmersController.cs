@@ -25,17 +25,7 @@ public class FarmersController : ControllerBase
         f.RatingFarmer, f.OrdersFulfilled, f.Phone, f.ImagePath,
         f.Region, f.Country, f.CountryCode, f.Zone, Media.FarmImages(f.Country, f.Id));
 
-    private static ProduceResponse ToProduceResponse(Produce p) => new(
-        p.Id, p.Name, p.Category, p.Description, p.Price, p.Unit, p.QuantityAvailable,
-        p.ImagePath, p.HarvestDate, p.ExpiryDate, p.AvailableFrom, p.IsExportReady, p.GradeQuality,
-        p.FarmerProfileId,
-        p.FarmerProfile!.User!.Name, p.FarmerProfile.Phone, p.FarmerProfile.ImagePath,
-        p.FarmerProfile.FarmName,
-        p.FarmerProfile.LocationCounty, p.FarmerProfile.LocationSubCounty, p.FarmerProfile.LocationTown,
-        p.FarmerProfile.FarmLatitude, p.FarmerProfile.FarmLongitude,
-        p.FarmerProfile.RatingFarmer, p.FarmerProfile.OrdersFulfilled,
-        p.FarmerProfile.Region, p.FarmerProfile.Country, p.FarmerProfile.CountryCode, p.FarmerProfile.Zone,
-        Media.ImageUrl(p.Category, p.Id), Media.Gallery(p.Category, p.Id), Media.IconUrl(p.Category));
+    private static ProduceResponse ToProduceResponse(Produce p) => ProduceController.ToResponse(p);
 
     [HttpGet]
     public async Task<ActionResult<List<FarmerResponse>>> GetAll([FromQuery] string? county)
