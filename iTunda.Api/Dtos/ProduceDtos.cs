@@ -25,7 +25,14 @@ public record ProduceResponse(
     double? FarmLatitude,
     double? FarmLongitude,
     double FarmerRating,
-    int FarmerOrdersFulfilled);
+    int FarmerOrdersFulfilled,
+    string? Region,
+    string? Country,
+    string? CountryCode,
+    int Zone,
+    string ImageUrl,
+    List<string> Gallery,
+    string IconUrl);
 
 public record CreateProduceRequest(
     string Name,

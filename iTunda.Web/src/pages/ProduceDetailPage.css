@@ -93,8 +93,43 @@
 .farmer-info-label { color: var(--muted); font-weight: 600; }
 .farmer-info-value { color: var(--text); }
 
+/* Image gallery */
+.detail-gallery { display: flex; flex-direction: column; gap: 10px; }
+.dg-main {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  background: var(--tint);
+  box-shadow: var(--shadow-md);
+}
+.dg-main img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dg-main-badges { position: absolute; top: 14px; left: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.dg-thumbs { display: flex; gap: 10px; flex-wrap: wrap; }
+.dg-thumb {
+  width: 78px; height: 60px; border-radius: 10px; overflow: hidden;
+  border: 2px solid transparent; cursor: pointer; padding: 0; background: none;
+  transition: border-color 0.15s;
+}
+.dg-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dg-thumb.active { border-color: var(--primary); }
+.dg-thumb:hover { border-color: var(--accent); }
+
+.detail-headline {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; margin-top: 18px; flex-wrap: wrap;
+}
+.detail-headline .detail-name { color: var(--primary-dark); margin-bottom: 6px; }
+.detail-headline .detail-price { color: var(--amber); font-size: 26px; }
+.detail-headline .detail-price span { color: var(--muted); }
+.detail-origin { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--muted); }
+
+.detail-map-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.detail-map-legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.detail-map-legend .lg-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
 /* Order panel */
-.order-panel { position: sticky; top: 80px; }
+.order-panel { position: sticky; top: 120px; }
 .order-card {}
 .order-price-display { text-align: center; margin-bottom: 20px; }
 .order-price-big { font-size: 32px; font-weight: 900; color: var(--amber); }

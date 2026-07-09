@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using iTunda.Api.Data;
 using iTunda.Api.Dtos;
 using iTunda.Api.Models;
+using iTunda.Api.Services;
 
 namespace iTunda.Api.Controllers;
 
@@ -21,7 +22,20 @@ public class FarmersController : ControllerBase
         f.Certifications, f.LocationCounty, f.LocationSubCounty, f.LocationTown,
         f.FarmLatitude, f.FarmLongitude,
         f.SizeOfFarmAcres, f.AbleToExportDirectly, f.ExportsDomain,
-        f.RatingFarmer, f.OrdersFulfilled, f.Phone, f.ImagePath);
+        f.RatingFarmer, f.OrdersFulfilled, f.Phone, f.ImagePath,
+        f.Region, f.Country, f.CountryCode, f.Zone, Media.FarmImages(f.Country, f.Id));
+
+    private static ProduceResponse ToProduceResponse(Produce p) => new(
+        p.Id, p.Name, p.Category, p.Description, p.Price, p.Unit, p.QuantityAvailable,
+        p.ImagePath, p.HarvestDate, p.ExpiryDate, p.AvailableFrom, p.IsExportReady, p.GradeQuality,
+        p.FarmerProfileId,
+        p.FarmerProfile!.User!.Name, p.FarmerProfile.Phone, p.FarmerProfile.ImagePath,
+        p.FarmerProfile.FarmName,
+        p.FarmerProfile.LocationCounty, p.FarmerProfile.LocationSubCounty, p.FarmerProfile.LocationTown,
+        p.FarmerProfile.FarmLatitude, p.FarmerProfile.FarmLongitude,
+        p.FarmerProfile.RatingFarmer, p.FarmerProfile.OrdersFulfilled,
+        p.FarmerProfile.Region, p.FarmerProfile.Country, p.FarmerProfile.CountryCode, p.FarmerProfile.Zone,
+        Media.ImageUrl(p.Category, p.Id), Media.Gallery(p.Category, p.Id), Media.IconUrl(p.Category));
 
     [HttpGet]
     public async Task<ActionResult<List<FarmerResponse>>> GetAll([FromQuery] string? county)
@@ -59,15 +73,7 @@ public class FarmersController : ControllerBase
             .Where(p => p.FarmerProfileId == id && p.IsActive)
             .ToListAsync();
 
-        return Ok(items.Select(p => new ProduceResponse(
-            p.Id, p.Name, p.Category, p.Description, p.Price, p.Unit, p.QuantityAvailable,
-            p.ImagePath, p.HarvestDate, p.ExpiryDate, p.AvailableFrom, p.IsExportReady, p.GradeQuality,
-            p.FarmerProfileId,
-            p.FarmerProfile!.User!.Name, p.FarmerProfile.Phone, p.FarmerProfile.ImagePath,
-            p.FarmerProfile.FarmName,
-            p.FarmerProfile.LocationCounty, p.FarmerProfile.LocationSubCounty, p.FarmerProfile.LocationTown,
-            p.FarmerProfile.FarmLatitude, p.FarmerProfile.FarmLongitude,
-            p.FarmerProfile.RatingFarmer, p.FarmerProfile.OrdersFulfilled)));
+        return Ok(items.Select(ToProduceResponse));
     }
 
     [HttpPut("me")]

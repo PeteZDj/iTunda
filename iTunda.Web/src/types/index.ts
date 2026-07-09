@@ -34,6 +34,13 @@ export interface ProduceResponse {
   farmLongitude: number | null;
   farmerRating: number;
   farmerOrdersFulfilled: number;
+  region: string | null;
+  country: string | null;
+  countryCode: string | null;
+  zone: number;
+  imageUrl: string;
+  gallery: string[];
+  iconUrl: string;
 }
 
 export interface FarmerResponse {
@@ -56,6 +63,11 @@ export interface FarmerResponse {
   ordersFulfilled: number;
   phone: string | null;
   imagePath: string | null;
+  region: string | null;
+  country: string | null;
+  countryCode: string | null;
+  zone: number;
+  farmImages: string[];
 }
 
 export interface OrderItemResponse {
@@ -83,4 +95,91 @@ export interface CategoryStats {
   category: string;
   activeListings: number;
   farmersOffering: number;
+}
+
+export interface RegionDto {
+  name: string;
+  country: string;
+  countryCode: string;
+  zone: number;
+  zoneName: string;
+  lat: number;
+  lng: number;
+  crops: string[];
+  listingCount: number;
+}
+
+export interface CommodityDto {
+  category: string;
+  unit: string;
+  iconUrl: string;
+  avgPrice: number;
+  low: number;
+  high: number;
+  changePct: number;
+  listings: number;
+}
+
+export interface BuyOrderResponse {
+  id: number;
+  commodity: string;
+  variety: string | null;
+  grade: string | null;
+  unit: string;
+  quantity: number;
+  targetPrice: number;
+  region: string | null;
+  country: string | null;
+  countryCode: string | null;
+  zone: number;
+  buyerName: string;
+  exportRequired: boolean;
+  status: string;
+  createdAt: string;
+  neededBy: string | null;
+  iconUrl: string;
+}
+
+export interface CreateBuyOrderRequest {
+  commodity: string;
+  variety?: string | null;
+  grade?: string | null;
+  unit: string;
+  quantity: number;
+  targetPrice: number;
+  region?: string | null;
+  country?: string | null;
+  countryCode?: string | null;
+  zone: number;
+  buyerName: string;
+  buyerContact?: string | null;
+  exportRequired: boolean;
+  neededBy?: string | null;
+}
+
+export interface DeliveryEstimateRequest {
+  originLat: number;
+  originLng: number;
+  destLat: number;
+  destLng: number;
+  originLabel?: string | null;
+  destLabel?: string | null;
+  weightKg?: number | null;
+}
+
+export interface DeliveryEstimateResponse {
+  distanceKm: number;
+  etaHours: number;
+  baseFee: number;
+  perKm: number;
+  priceKes: number;
+  priceUsd: number;
+  mode: string;
+  googleMapsUrl: string;
+  originLat: number;
+  originLng: number;
+  destLat: number;
+  destLng: number;
+  originLabel: string | null;
+  destLabel: string | null;
 }

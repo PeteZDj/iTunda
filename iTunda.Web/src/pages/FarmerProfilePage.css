@@ -46,6 +46,24 @@
 .fp-stat-v { font-size: 22px; font-weight: 800; color: #fff; }
 .fp-stat-l { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; }
 
+.fp-farm-photos {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+.fp-farm-photo { border-radius: 14px; overflow: hidden; height: 200px; background: var(--tint); box-shadow: var(--shadow-sm); }
+.fp-farm-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }
+.fp-farm-photo:hover img { transform: scale(1.05); }
+.fp-farm-photo:first-child { grid-row: span 1; }
+@media (max-width: 700px) {
+  .fp-farm-photos { grid-template-columns: 1fr 1fr; }
+  .fp-farm-photo { height: 130px; }
+  .fp-farm-photo:first-child { grid-column: span 2; height: 180px; }
+}
+
+.detail-map-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+
 .fp-body { padding: 32px 24px 60px; }
 .fp-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
 @media (max-width: 900px) { .fp-grid { grid-template-columns: 1fr; } }

@@ -22,7 +22,18 @@ public class FarmerResponse
     public string? Phone { get; set; }
     public string? ImagePath { get; set; }
 
-    public string LocationDisplay => string.IsNullOrEmpty(LocationTown)
-        ? LocationCounty ?? ""
-        : $"{LocationTown}, {LocationCounty}";
+    public string? Region { get; set; }
+    public string? Country { get; set; }
+    public string? CountryCode { get; set; }
+    public int Zone { get; set; }
+    public List<string> FarmImages { get; set; } = new();
+
+    public string LocationDisplay => !string.IsNullOrEmpty(Region)
+        ? (string.IsNullOrEmpty(Country) ? Region : $"{Region}, {Country}")
+        : (string.IsNullOrEmpty(LocationTown) ? LocationCounty ?? "" : $"{LocationTown}, {LocationCounty}");
+    public string FlagUrl => string.IsNullOrEmpty(CountryCode)
+        ? "https://flagcdn.com/24x18/un.png"
+        : $"https://flagcdn.com/24x18/{CountryCode.ToLower()}.png";
+    public bool HasGeo => FarmLatitude.HasValue && FarmLongitude.HasValue;
+    public string GoogleMapsUrl => $"https://www.google.com/maps?q={FarmLatitude},{FarmLongitude}";
 }

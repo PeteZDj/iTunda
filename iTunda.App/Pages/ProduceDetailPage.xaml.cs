@@ -56,11 +56,16 @@ public class ProduceDetailPage : ContentPage
             Margin = new Thickness(0, 8, 0, 4)
         }, 0, 1);
 
-        header.Add(new Label
+        header.Add(new HorizontalStackLayout
         {
-            Text = item.Category,
-            FontSize = 14,
-            TextColor = Accent
+            Spacing = 6,
+            Children =
+            {
+                new Image { Source = item.IconUrl, WidthRequest = 18, HeightRequest = 18, VerticalOptions = LayoutOptions.Center },
+                new Label { Text = item.Category, FontSize = 14, TextColor = Accent, VerticalOptions = LayoutOptions.Center },
+                new Image { Source = item.FlagUrl, WidthRequest = 22, HeightRequest = 15, VerticalOptions = LayoutOptions.Center, Margin = new Thickness(8, 0, 0, 0) },
+                new Label { Text = item.LocationDisplay, FontSize = 13, TextColor = Color.FromArgb("#A5D6A7"), VerticalOptions = LayoutOptions.Center }
+            }
         }, 0, 2);
 
         // ── Price + badges band ───────────────────────────────────────────
@@ -90,6 +95,41 @@ public class ProduceDetailPage : ContentPage
         if (item.IsExportReady)
             badges.Children.Add(Badge("Export Ready", Amber));
         priceRow.Add(badges, 1, 0);
+
+        // ── Photo gallery (hero + thumbnails) ─────────────────────────────
+        var mainImage = new Image
+        {
+            Source = string.IsNullOrEmpty(item.ImageUrl) ? null : item.ImageUrl,
+            Aspect = Aspect.AspectFill,
+            HeightRequest = 220,
+            BackgroundColor = Color.FromArgb("#E9F6EE")
+        };
+        var galleryCard = new Frame
+        {
+            BackgroundColor = Colors.White,
+            CornerRadius = 12,
+            HasShadow = true,
+            IsClippedToBounds = true,
+            Padding = new Thickness(0),
+            Margin = new Thickness(16, 12, 16, 0),
+            Content = new VerticalStackLayout { Spacing = 0, Children = { mainImage } }
+        };
+
+        var thumbs = new HorizontalStackLayout { Spacing = 8, Padding = new Thickness(16, 8, 16, 0) };
+        var allImages = new List<string>();
+        if (!string.IsNullOrEmpty(item.ImageUrl)) allImages.Add(item.ImageUrl);
+        allImages.AddRange(item.Gallery);
+        foreach (var src in allImages)
+        {
+            var thumb = new Image { Source = src, Aspect = Aspect.AspectFill, WidthRequest = 66, HeightRequest = 50, BackgroundColor = Color.FromArgb("#E9F6EE") };
+            var tf = new Frame { CornerRadius = 8, Padding = 0, IsClippedToBounds = true, HasShadow = false, BorderColor = Color.FromArgb("#DDD"), WidthRequest = 66, HeightRequest = 50, Content = thumb };
+            var tg = new TapGestureRecognizer();
+            var captured = src;
+            tg.Tapped += (_, _) => mainImage.Source = captured;
+            tf.GestureRecognizers.Add(tg);
+            thumbs.Children.Add(tf);
+        }
+        var thumbsScroll = new ScrollView { Orientation = ScrollOrientation.Horizontal, HorizontalScrollBarVisibility = ScrollBarVisibility.Never, Content = thumbs };
 
         // ── Info grid card ────────────────────────────────────────────────
         var infoCard = new Frame
@@ -160,7 +200,8 @@ public class ProduceDetailPage : ContentPage
                     new BoxView { BackgroundColor = Color.FromArgb("#EEE"), HeightRequest = 1 },
                     FarmerInfoRow("Farm", item.FarmName ?? item.FarmerName),
                     FarmerInfoRow("Farmer", item.FarmerName),
-                    FarmerInfoRow("County", $"{item.Town}, {item.County}"),
+                    FarmerInfoRow("Region", item.LocationDisplay),
+                    FarmerInfoRow("Export Zone", $"Zone {item.Zone}"),
                     FarmerInfoRow("Rating", $"★ {item.FarmerRating:0.0}  ({item.FarmerOrdersFulfilled} orders fulfilled)"),
                     item.FarmerPhone != null ? FarmerInfoRow("Phone", item.FarmerPhone) : new BoxView { IsVisible = false, HeightRequest = 0 }
                 }
@@ -180,6 +221,25 @@ public class ProduceDetailPage : ContentPage
             Margin = new Thickness(16, 0, 16, 8)
         };
         orderBtn.Clicked += OnOrderClicked;
+
+        var mapsBtn = new Button
+        {
+            Text = "🗺  Open farm & meet-up in Google Maps",
+            BackgroundColor = Colors.White,
+            TextColor = Primary,
+            BorderColor = Accent,
+            BorderWidth = 1.5,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 30,
+            HeightRequest = 48,
+            FontSize = 14,
+            Margin = new Thickness(16, 0, 16, 8),
+            IsVisible = item.HasGeo
+        };
+        mapsBtn.Clicked += async (_, _) =>
+        {
+            try { await Launcher.OpenAsync(new Uri(item.GoogleMapsUrl)); } catch { }
+        };
 
         var viewFarmerBtn = new Button
         {
@@ -205,7 +265,7 @@ public class ProduceDetailPage : ContentPage
         {
             Content = new VerticalStackLayout
             {
-                Children = { header, priceRow, infoCard, descCard, farmerCard, orderBtn, viewFarmerBtn }
+                Children = { header, priceRow, galleryCard, thumbsScroll, infoCard, descCard, farmerCard, orderBtn, mapsBtn, viewFarmerBtn }
             }
         };
     }

@@ -18,6 +18,12 @@ public class FarmerProfile
     public double? FarmLatitude { get; set; }
     public double? FarmLongitude { get; set; }
 
+    // Regional / export-zone metadata
+    public string? Region { get; set; }
+    public string? Country { get; set; }
+    public string? CountryCode { get; set; }
+    public int Zone { get; set; }
+
     public double SizeOfFarmAcres { get; set; }
     public bool AbleToExportDirectly { get; set; }
     public string? ExportsDomain { get; set; }

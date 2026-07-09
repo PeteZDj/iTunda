@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using iTunda.Api.Data;
 using iTunda.Api.Dtos;
 using iTunda.Api.Models;
+using iTunda.Api.Services;
 
 namespace iTunda.Api.Controllers;
 
@@ -24,13 +25,18 @@ public class ProduceController : ControllerBase
         p.FarmerProfile.FarmName,
         p.FarmerProfile.LocationCounty, p.FarmerProfile.LocationSubCounty, p.FarmerProfile.LocationTown,
         p.FarmerProfile.FarmLatitude, p.FarmerProfile.FarmLongitude,
-        p.FarmerProfile.RatingFarmer, p.FarmerProfile.OrdersFulfilled);
+        p.FarmerProfile.RatingFarmer, p.FarmerProfile.OrdersFulfilled,
+        p.FarmerProfile.Region, p.FarmerProfile.Country, p.FarmerProfile.CountryCode, p.FarmerProfile.Zone,
+        Media.ImageUrl(p.Category, p.Id), Media.Gallery(p.Category, p.Id), Media.IconUrl(p.Category));
 
     [HttpGet]
     public async Task<ActionResult<List<ProduceResponse>>> GetAll(
         [FromQuery] string? q,
         [FromQuery] string? category,
         [FromQuery] string? county,
+        [FromQuery] string? region,
+        [FromQuery] string? country,
+        [FromQuery] int? zone,
         [FromQuery] bool? exportReady,
         [FromQuery] bool includeFuture = false)
     {
@@ -46,7 +52,9 @@ public class ProduceController : ControllerBase
             var qLower = q.ToLower();
             query = query.Where(p => p.Name.ToLower().Contains(qLower) || p.Category.ToLower().Contains(qLower)
                 || (p.Description != null && p.Description.ToLower().Contains(qLower))
-                || (p.FarmerProfile!.LocationCounty != null && p.FarmerProfile!.LocationCounty.ToLower().Contains(qLower)));
+                || (p.FarmerProfile!.LocationCounty != null && p.FarmerProfile!.LocationCounty.ToLower().Contains(qLower))
+                || (p.FarmerProfile!.Region != null && p.FarmerProfile!.Region.ToLower().Contains(qLower))
+                || (p.FarmerProfile!.Country != null && p.FarmerProfile!.Country.ToLower().Contains(qLower)));
         }
 
         if (!string.IsNullOrWhiteSpace(category))
@@ -54,6 +62,15 @@ public class ProduceController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(county))
             query = query.Where(p => p.FarmerProfile!.LocationCounty == county);
+
+        if (!string.IsNullOrWhiteSpace(region))
+            query = query.Where(p => p.FarmerProfile!.Region == region);
+
+        if (!string.IsNullOrWhiteSpace(country))
+            query = query.Where(p => p.FarmerProfile!.Country == country);
+
+        if (zone.HasValue)
+            query = query.Where(p => p.FarmerProfile!.Zone == zone.Value);
 
         if (exportReady.HasValue)
             query = query.Where(p => p.IsExportReady == exportReady.Value);

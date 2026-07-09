@@ -1,16 +1,17 @@
 .browse-page {
   display: grid;
   grid-template-columns: 280px 1fr;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 104px);
   align-items: start;
 }
 
 .browse-sidebar {
   background: #fff;
   border-right: 1px solid var(--border);
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 104px);
   position: sticky;
-  top: 64px;
+  top: 104px;
+  max-height: calc(100vh - 104px);
   overflow-y: auto;
   padding-bottom: 40px;
 }
@@ -76,6 +77,19 @@
 .browse-title { font-size: 26px; font-weight: 800; color: var(--primary); }
 .browse-subtitle { font-weight: 500; color: var(--muted); font-size: 20px; }
 .browse-count { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+.browse-origin-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--tint);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 20px;
+}
 
 .browse-grid {
   display: grid;

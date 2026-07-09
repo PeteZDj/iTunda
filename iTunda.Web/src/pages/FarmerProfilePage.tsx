@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getFarmerById, getMyListings } from '../services/api';
+import { flagUrl } from '../lib/geo';
+import LeafletMap, { type MapMarker } from '../components/LeafletMap';
 import type { FarmerResponse, ProduceResponse } from '../types';
 import ProduceCard from '../components/ProduceCard';
 import './FarmerProfilePage.css';
@@ -46,6 +48,18 @@ export default function FarmerProfilePage() {
         </div>
       </div>
 
+      {farmer.farmImages && farmer.farmImages.length > 0 && (
+        <div className="page-container">
+          <div className="fp-farm-photos">
+            {farmer.farmImages.map((src, i) => (
+              <div key={i} className="fp-farm-photo">
+                <img src={src} alt={`${farmer.farmName} field ${i + 1}`} loading="lazy" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="page-container fp-body">
         <div className="fp-grid">
           {/* Left: info */}
@@ -53,11 +67,11 @@ export default function FarmerProfilePage() {
             <div className="card">
               <h3 className="card-section-title">Farm Information</h3>
               {[
-                ['📍 Location', [farmer.locationTown, farmer.locationSubCounty, farmer.locationCounty].filter(Boolean).join(', ')],
+                ['📍 Location', [farmer.region, farmer.country].filter(Boolean).join(', ') || '—'],
+                ['🧭 Export Zone', farmer.zone ? `Zone ${farmer.zone}` : '—'],
                 ['🌱 Specialization', farmer.specialization ?? '—'],
                 ['🏆 Certifications', farmer.certifications ?? '—'],
                 ['✈ Exports Directly', farmer.ableToExportDirectly ? `Yes — ${farmer.exportsDomain ?? 'Various markets'}` : 'No'],
-                ['🌍 Export Markets', farmer.exportsDomain ?? '—'],
               ].map(([l, v]) => (
                 <div key={l} className="fp-info-row">
                   <span className="fp-info-label">{l}</span>
@@ -66,18 +80,27 @@ export default function FarmerProfilePage() {
               ))}
             </div>
 
-            {farmer.farmLatitude && (
+            {farmer.farmLatitude != null && farmer.farmLongitude != null && (
               <div className="card" style={{ marginTop: 16 }}>
-                <h3 className="card-section-title">GPS Location</h3>
-                <div className="fp-gps-card">
-                  <div className="fp-gps-icon">📍</div>
-                  <div>
-                    <div style={{ fontWeight: 700 }}>{farmer.farmName}</div>
-                    <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
-                      {farmer.locationCounty} County, Kenya<br />
-                      {farmer.farmLatitude.toFixed(4)}°, {farmer.farmLongitude?.toFixed(4)}°
-                    </div>
-                  </div>
+                <div className="detail-map-head">
+                  <h3 className="card-section-title" style={{ margin: 0 }}>Farm Location</h3>
+                  <a
+                    href={`https://www.google.com/maps?q=${farmer.farmLatitude},${farmer.farmLongitude}`}
+                    target="_blank" rel="noreferrer" className="btn btn-outline btn-sm">🗺 Google Maps</a>
+                </div>
+                <LeafletMap
+                  height={280}
+                  zoom={9}
+                  markers={[{
+                    lat: farmer.farmLatitude, lng: farmer.farmLongitude,
+                    title: farmer.farmName, subtitle: `${farmer.region}, ${farmer.country}`,
+                    color: '#0e7a3e', emoji: '🌱',
+                    href: `https://www.google.com/maps?q=${farmer.farmLatitude},${farmer.farmLongitude}`,
+                  } as MapMarker]}
+                />
+                <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <img className="pc-flag" src={flagUrl(farmer.countryCode)} alt="" />
+                  {farmer.farmLatitude.toFixed(4)}°, {farmer.farmLongitude.toFixed(4)}°
                 </div>
               </div>
             )}

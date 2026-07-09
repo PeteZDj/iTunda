@@ -1,28 +1,29 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { getProduce, getCategories } from '../services/api';
+import { useRegion } from '../context/RegionContext';
+import { flagUrl, ZONES } from '../lib/geo';
 import type { ProduceResponse } from '../types';
 import ProduceCard from '../components/ProduceCard';
 import './BrowsePage.css';
 
-const KENYAN_COUNTIES = [
-  'Nairobi','Murang\'a','Nyeri','Kirinyaga','Nakuru','Nandi','Kisumu',
-  'Kilifi','Kajiado','Machakos','Trans Nzoia','Elgeyo Marakwet','Kisii',
-  'Homa Bay','Makueni','Uasin Gishu',
-];
-
 export default function BrowsePage() {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
+  const { category: pathCategory } = useParams();
+  const navigate = useNavigate();
+  const { regions, zone, region, setZone, setRegion, clear } = useRegion();
+
   const [items, setItems] = useState<ProduceResponse[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [q, setQ] = useState(params.get('q') ?? '');
-  const [category, setCategory] = useState(params.get('category') ?? '');
-  const [county, setCounty] = useState(params.get('county') ?? '');
   const [exportOnly, setExportOnly] = useState(false);
   const [includeFuture, setIncludeFuture] = useState(false);
+
+  // Category resolves from the path (/browse/Avocados) or the query (?category=Avocados)
+  const category = pathCategory ? decodeURIComponent(pathCategory) : (params.get('category') ?? '');
 
   useEffect(() => { getCategories().then(setCategories).catch(() => {}); }, []);
 
@@ -33,7 +34,8 @@ export default function BrowsePage() {
       const data = await getProduce({
         q: q || undefined,
         category: category || undefined,
-        county: county || undefined,
+        region: region || undefined,
+        zone: zone ?? undefined,
         exportReady: exportOnly || undefined,
         includeFuture,
       });
@@ -41,24 +43,28 @@ export default function BrowsePage() {
     } catch {
       setError('Failed to load listings. Is the API running?');
     } finally { setLoading(false); }
-  }, [q, category, county, exportOnly, includeFuture]);
+  }, [q, category, region, zone, exportOnly, includeFuture]);
 
   useEffect(() => { load(); }, [load]);
 
   const applyCategory = (cat: string) => {
-    setCategory(cat);
-    setParams(cat ? { category: cat } : {});
+    if (cat) navigate(`/browse/${encodeURIComponent(cat)}`);
+    else navigate('/browse');
   };
+
+  const activeOriginLabel = region
+    ? region
+    : zone != null ? (ZONES.find(z => z.zone === zone)?.name ?? `Zone ${zone}`)
+    : null;
 
   return (
     <div className="browse-page">
-      {/* ── Sidebar ───────────────────────────────────────────── */}
       <aside className="browse-sidebar">
         <div className="sidebar-section">
           <h3 className="sidebar-heading">Search</h3>
           <input
             className="input"
-            placeholder="e.g. avocados, onions…"
+            placeholder="e.g. avocados, Kenya…"
             value={q}
             onChange={e => setQ(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && load()}
@@ -79,10 +85,28 @@ export default function BrowsePage() {
         </div>
 
         <div className="sidebar-section">
-          <h3 className="sidebar-heading">County</h3>
-          <select className="select" value={county} onChange={e => setCounty(e.target.value)}>
-            <option value="">All Counties</option>
-            {KENYAN_COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
+          <h3 className="sidebar-heading">Export Zone</h3>
+          <div className="sidebar-chips">
+            <button className={`chip ${zone == null && !region ? 'active' : ''}`} onClick={clear}>All</button>
+            {ZONES.map(z => (
+              <button key={z.zone} className={`chip ${zone === z.zone ? 'active' : ''}`} onClick={() => setZone(z.zone)}>
+                Zone {z.zone}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="sidebar-section">
+          <h3 className="sidebar-heading">Region of origin</h3>
+          <select className="select" value={region ?? ''} onChange={e => setRegion(e.target.value || null)}>
+            <option value="">All regions</option>
+            {ZONES.map(z => (
+              <optgroup key={z.zone} label={z.name}>
+                {regions.filter(r => r.zone === z.zone).map(r => (
+                  <option key={r.name} value={r.name}>{r.name}, {r.country} ({r.listingCount})</option>
+                ))}
+              </optgroup>
+            ))}
           </select>
         </div>
 
@@ -99,19 +123,18 @@ export default function BrowsePage() {
         </div>
 
         <button className="btn btn-outline btn-sm" style={{ margin: '0 16px' }} onClick={() => {
-          setQ(''); setCategory(''); setCounty(''); setExportOnly(false); setIncludeFuture(false); setParams({});
+          setQ(''); setExportOnly(false); setIncludeFuture(false); clear(); navigate('/browse');
         }}>
           Clear Filters
         </button>
       </aside>
 
-      {/* ── Main ──────────────────────────────────────────────── */}
       <main className="browse-main">
         <div className="browse-header">
           <div>
             <h1 className="browse-title">
               {category || 'All Produce'}
-              {county && <span className="browse-subtitle"> in {county}</span>}
+              {activeOriginLabel && <span className="browse-subtitle"> · {activeOriginLabel}</span>}
             </h1>
             {!loading && <p className="browse-count">{items.length.toLocaleString()} listings found</p>}
           </div>
@@ -119,6 +142,16 @@ export default function BrowsePage() {
             <button className="btn btn-outline btn-sm" onClick={() => applyCategory('')}>✕ Clear category</button>
           )}
         </div>
+
+        {activeOriginLabel && (
+          <div className="browse-origin-note">
+            {region && regions.find(r => r.name === region) && (
+              <img className="pc-flag" src={flagUrl(regions.find(r => r.name === region)!.countryCode)} alt="" />
+            )}
+            Showing produce from <strong>{activeOriginLabel}</strong>
+            <button className="btn btn-outline btn-sm" style={{ marginLeft: 12 }} onClick={clear}>✕ Clear origin</button>
+          </div>
+        )}
 
         {loading && <div className="spinner" />}
         {error && <div className="alert alert-error">{error}</div>}

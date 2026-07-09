@@ -103,7 +103,7 @@ public class BrowsePage : ContentPage
             {
                 new Label
                 {
-                    Text = "Kenya's Freshest Produce",
+                    Text = "The World's Freshest Produce",
                     FontSize = 18,
                     FontAttributes = FontAttributes.Bold,
                     TextColor = Colors.White
@@ -197,10 +197,27 @@ public class BrowsePage : ContentPage
 
     private View ProduceCard(ProduceResponse item)
     {
+        // Produce photo header + fruit icon
+        var photo = new Image
+        {
+            Source = item.ImageUrl,
+            Aspect = Aspect.AspectFill,
+            HeightRequest = 150,
+            BackgroundColor = Color.FromArgb("#E9F6EE")
+        };
+
         var catBadge = new Frame
         {
             BackgroundColor = Accent, CornerRadius = 10, Padding = new Thickness(8, 3), HasShadow = false,
-            Content = new Label { Text = item.Category, TextColor = Colors.White, FontSize = 11 }
+            Content = new HorizontalStackLayout
+            {
+                Spacing = 5,
+                Children =
+                {
+                    new Image { Source = item.IconUrl, WidthRequest = 14, HeightRequest = 14, VerticalOptions = LayoutOptions.Center },
+                    new Label { Text = item.Category, TextColor = Colors.White, FontSize = 11, VerticalOptions = LayoutOptions.Center }
+                }
+            }
         };
 
         View exportBadge = item.IsExportReady
@@ -244,7 +261,24 @@ public class BrowsePage : ContentPage
             HorizontalTextAlignment = TextAlignment.End
         }, 1, 0);
 
-        // Info row: qty | expiry | location
+        // Flag + region row
+        var flagRow = new HorizontalStackLayout
+        {
+            Spacing = 7,
+            Children =
+            {
+                new Image { Source = item.FlagUrl, WidthRequest = 22, HeightRequest = 15, VerticalOptions = LayoutOptions.Center },
+                new Label { Text = item.LocationDisplay, FontSize = 13, FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#333"), VerticalOptions = LayoutOptions.Center },
+                new Frame
+                {
+                    BackgroundColor = Color.FromArgb("#DCFCE7"), CornerRadius = 6, Padding = new Thickness(6, 1), HasShadow = false,
+                    VerticalOptions = LayoutOptions.Center,
+                    Content = new Label { Text = $"Zone {item.Zone}", FontSize = 10, FontAttributes = FontAttributes.Bold, TextColor = Primary }
+                }
+            }
+        };
+
+        // Info row: qty | expiry | grade
         var infoRow = new Grid
         {
             ColumnDefinitions =
@@ -256,7 +290,7 @@ public class BrowsePage : ContentPage
         };
         infoRow.Add(InfoCell("QTY", item.QuantityDisplay), 0, 0);
         infoRow.Add(InfoCell("EXPIRY", item.ExpiryDisplay), 1, 0);
-        infoRow.Add(InfoCell("LOCATION", item.LocationDisplay), 2, 0);
+        infoRow.Add(InfoCell("GRADE", item.GradeQuality ?? "Standard"), 2, 0);
 
         // Farmer row
         var farmerRow = new Grid
@@ -287,24 +321,33 @@ public class BrowsePage : ContentPage
             }
         }, 1, 0);
 
+        var innerContent = new VerticalStackLayout
+        {
+            Spacing = 10,
+            Padding = new Thickness(16, 14),
+            Children =
+            {
+                new HorizontalStackLayout { Spacing = 6, Children = { catBadge, exportBadge, scheduledBadge } },
+                titlePriceRow,
+                flagRow,
+                infoRow,
+                new BoxView { BackgroundColor = Color.FromArgb("#EEE"), HeightRequest = 1 },
+                farmerRow
+            }
+        };
+
         var card = new Frame
         {
             BackgroundColor = Colors.White,
-            CornerRadius = 10,
+            CornerRadius = 12,
             HasShadow = true,
-            Padding = new Thickness(16, 14),
+            IsClippedToBounds = true,
+            Padding = new Thickness(0),
             Margin = new Thickness(0, 6),
             Content = new VerticalStackLayout
             {
-                Spacing = 10,
-                Children =
-                {
-                    new HorizontalStackLayout { Spacing = 6, Children = { catBadge, exportBadge, scheduledBadge } },
-                    titlePriceRow,
-                    infoRow,
-                    new BoxView { BackgroundColor = Color.FromArgb("#EEE"), HeightRequest = 1 },
-                    farmerRow
-                }
+                Spacing = 0,
+                Children = { photo, innerContent }
             }
         };
 

@@ -1,0 +1,42 @@
+.lf-map {
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  z-index: 0;
+  border: 1px solid var(--border);
+  background: #e9f6ee;
+}
+
+.lf-pin-wrap { background: none; border: none; }
+.lf-pin {
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 50% 0;
+  background: var(--pin, #0e7a3e);
+  transform: rotate(-45deg);
+  box-shadow: 0 3px 8px rgba(6, 55, 28, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+}
+.lf-pin span {
+  transform: rotate(45deg);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.lf-popup { font-family: var(--font-body); min-width: 150px; }
+.lf-popup strong { color: var(--primary-dark); font-size: 14px; }
+.lf-popup div { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.lf-popup-btn {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+}
+.lf-popup-btn:hover { text-decoration: underline; }
+
+.leaflet-container { font-family: var(--font-body); }

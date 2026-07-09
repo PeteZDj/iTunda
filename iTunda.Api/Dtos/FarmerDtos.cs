@@ -19,7 +19,12 @@ public record FarmerResponse(
     double RatingFarmer,
     int OrdersFulfilled,
     string? Phone,
-    string? ImagePath);
+    string? ImagePath,
+    string? Region,
+    string? Country,
+    string? CountryCode,
+    int Zone,
+    List<string> FarmImages);
 
 public record UpdateFarmerProfileRequest(
     string FarmName,

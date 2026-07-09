@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getProduceById, createOrder } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { flagUrl } from '../lib/geo';
+import LeafletMap, { type MapMarker } from '../components/LeafletMap';
 import type { ProduceResponse } from '../types';
 import './ProduceDetailPage.css';
 
@@ -15,6 +17,7 @@ export default function ProduceDetailPage() {
   const [item, setItem] = useState<ProduceResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState('50');
   const [address, setAddress] = useState('');
   const [ordering, setOrdering] = useState(false);
@@ -25,8 +28,9 @@ export default function ProduceDetailPage() {
 
   useEffect(() => {
     if (!id) return;
+    setLoading(true);
     getProduceById(Number(id))
-      .then(setItem)
+      .then(p => { setItem(p); setActiveImg(0); })
       .catch(() => setError('Listing not found.'))
       .finally(() => setLoading(false));
   }, [id]);
@@ -50,36 +54,64 @@ export default function ProduceDetailPage() {
   if (error || !item) return <div className="alert alert-error" style={{ margin: 40 }}>{error || 'Not found'}</div>;
 
   const isScheduled = item.availableFrom && new Date(item.availableFrom) > new Date();
+  const images = [item.imageUrl, ...item.gallery].filter(Boolean);
+
+  // Farm + distributor collection hub + suggested meet-up point for the map.
+  const hasGeo = item.farmLatitude != null && item.farmLongitude != null;
+  const flat = item.farmLatitude ?? 0;
+  const flng = item.farmLongitude ?? 0;
+  const hub: [number, number] = [flat + 0.16, flng + 0.16];
+  const meet: [number, number] = [flat + 0.08, flng + 0.08];
+  const gmapsMeet = `https://www.google.com/maps/dir/?api=1&origin=${flat},${flng}&destination=${hub[0]},${hub[1]}&travelmode=driving`;
+  const gmapsFarm = `https://www.google.com/maps?q=${flat},${flng}`;
+
+  const markers: MapMarker[] = hasGeo ? [
+    { lat: flat, lng: flng, title: item.farmName ?? 'Farm', subtitle: `${item.region}, ${item.country}`, color: '#0e7a3e', emoji: '🌱', href: gmapsFarm },
+    { lat: meet[0], lng: meet[1], title: 'Suggested meet-up point', subtitle: 'Farm ↔ distributor handover', color: '#f4a621', emoji: '🤝', href: gmapsMeet },
+    { lat: hub[0], lng: hub[1], title: 'Regional collection hub', subtitle: 'Distributor pickup & consolidation', color: '#0a4a26', emoji: '🚚' },
+  ] : [];
 
   return (
-    <div className="detail-page page-container" style={{ padding: '32px 24px' }}>
-      {/* Back */}
+    <div className="detail-page page-container" style={{ padding: '28px 24px' }}>
       <Link to="/browse" className="detail-back">← Back to Browse</Link>
 
       <div className="detail-grid">
-        {/* ── Left: main info ─────────────────────────────── */}
         <div>
-          {/* Hero card */}
-          <div className="detail-hero">
-            <div className="detail-hero-inner">
-              <div className="detail-badges">
-                <span className="badge badge-accent">{item.category}</span>
+          {/* Image gallery */}
+          <div className="detail-gallery">
+            <div className="dg-main">
+              <img src={images[activeImg]} alt={item.name} />
+              <div className="dg-main-badges">
+                <span className="badge badge-accent"><img className="pc-cat-icon" src={item.iconUrl} alt="" /> {item.category}</span>
                 {item.isExportReady && <span className="badge badge-amber">✈ Export Ready</span>}
                 {item.gradeQuality && <span className="badge badge-green">{item.gradeQuality}</span>}
-                {isScheduled && <span className="badge badge-blue">🕐 Scheduled</span>}
               </div>
+            </div>
+            {images.length > 1 && (
+              <div className="dg-thumbs">
+                {images.map((src, i) => (
+                  <button key={i} className={`dg-thumb ${i === activeImg ? 'active' : ''}`} onClick={() => setActiveImg(i)}>
+                    <img src={src} alt={`${item.name} ${i + 1}`} loading="lazy" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Title + price */}
+          <div className="detail-headline">
+            <div>
               <h1 className="detail-name">{item.name}</h1>
-              <div className="detail-price">
-                KES {item.price.toLocaleString()}
-                <span>/ {item.unit}</span>
+              <div className="detail-origin">
+                <img className="pc-flag" src={flagUrl(item.countryCode)} alt="" />
+                {item.region}, {item.country} · Zone {item.zone}
               </div>
-              {isScheduled && (
-                <div className="detail-scheduled">
-                  🕐 Available from {fmt(item.availableFrom)}
-                </div>
-              )}
+            </div>
+            <div className="detail-price">
+              KES {item.price.toLocaleString()}<span>/ {item.unit}</span>
             </div>
           </div>
+          {isScheduled && <div className="detail-scheduled">🕐 Available from {fmt(item.availableFrom)}</div>}
 
           {/* Info grid */}
           <div className="detail-info-grid card" style={{ marginTop: 16 }}>
@@ -98,11 +130,26 @@ export default function ProduceDetailPage() {
             ))}
           </div>
 
-          {/* Description */}
           {item.description && (
             <div className="card" style={{ marginTop: 16 }}>
               <h3 className="card-section-title">About this listing</h3>
               <p style={{ color: '#444', lineHeight: 1.7, fontSize: 15 }}>{item.description}</p>
+            </div>
+          )}
+
+          {/* Map with pins */}
+          {hasGeo && (
+            <div className="card" style={{ marginTop: 16 }}>
+              <div className="detail-map-head">
+                <h3 className="card-section-title" style={{ margin: 0 }}>Location & meet-up point</h3>
+                <a href={gmapsMeet} target="_blank" rel="noreferrer" className="btn btn-outline btn-sm">🗺 Open route in Google Maps</a>
+              </div>
+              <LeafletMap markers={markers} height={340} zoom={11} />
+              <div className="detail-map-legend">
+                <span><i className="lg-dot" style={{ background: '#0e7a3e' }} /> Farm</span>
+                <span><i className="lg-dot" style={{ background: '#f4a621' }} /> Meet-up point</span>
+                <span><i className="lg-dot" style={{ background: '#0a4a26' }} /> Distributor hub</span>
+              </div>
             </div>
           )}
 
@@ -119,7 +166,7 @@ export default function ProduceDetailPage() {
             </div>
             <div className="farmer-info-rows">
               {[
-                ['📍 Location', item.town ? `${item.town}, ${item.county}` : item.county ?? '—'],
+                ['📍 Location', `${item.region}, ${item.country}`],
                 ['🗺 GPS', item.farmLatitude ? `${item.farmLatitude.toFixed(4)}°, ${item.farmLongitude?.toFixed(4)}°` : '—'],
                 ['📞 Phone', item.farmerPhone ?? '—'],
               ].map(([label, value]) => (
@@ -135,7 +182,7 @@ export default function ProduceDetailPage() {
           </div>
         </div>
 
-        {/* ── Right: order panel ──────────────────────────── */}
+        {/* Right: order panel */}
         <div className="order-panel">
           <div className="card order-card">
             <h3 className="card-section-title">Place Order</h3>
@@ -181,27 +228,15 @@ export default function ProduceDetailPage() {
                   </Link>
                 )}
 
+                <Link to="/delivery" className="btn btn-outline btn-sm" style={{ width: '100%', justifyContent: 'center', borderRadius: 8, marginTop: 10 }}>
+                  🚚 Estimate delivery & route
+                </Link>
+
                 <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 12, textAlign: 'center' }}>
                   Secure order · Delivery tracking included
                 </p>
               </>
             )}
-          </div>
-
-          <div className="card" style={{ marginTop: 16 }}>
-            <h4 style={{ fontWeight: 700, marginBottom: 10, color: 'var(--primary)' }}>Farm Location</h4>
-            {item.farmLatitude ? (
-              <div className="map-placeholder">
-                <div className="map-pin">📍</div>
-                <div>
-                  <strong>{item.farmName}</strong><br />
-                  <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-                    {item.town}, {item.subCounty}, {item.county}<br />
-                    {item.farmLatitude.toFixed(4)}°N, {item.farmLongitude?.toFixed(4)}°E
-                  </span>
-                </div>
-              </div>
-            ) : <p style={{ color: 'var(--muted)', fontSize: 14 }}>Location not available</p>}
           </div>
         </div>
       </div>

@@ -1,0 +1,90 @@
+.region-select { position: relative; }
+
+.region-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.region-trigger:hover { background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.5); }
+.region-flag { width: 20px; height: 15px; border-radius: 3px; object-fit: cover; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
+.region-globe { font-size: 15px; }
+.region-label { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.region-chev { font-size: 10px; opacity: 0.8; }
+
+.region-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 288px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: #fff;
+  color: var(--text);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  padding: 8px;
+  z-index: 1200;
+}
+
+.region-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+}
+.region-item:hover { background: var(--tint); }
+.region-item-name { font-weight: 600; }
+.region-item-country { color: var(--muted); font-size: 11px; margin-left: auto; }
+.region-item-count {
+  min-width: 26px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--accent-light);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+.region-all { font-weight: 700; }
+.region-check { color: var(--primary); font-weight: 800; margin-left: 6px; }
+
+.region-group { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }
+.region-zone-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--primary-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.region-zone-head:hover { color: var(--primary); }
+.region-zone-blurb { padding: 0 10px 4px; font-size: 11px; color: var(--muted); }

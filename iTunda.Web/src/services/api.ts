@@ -1,7 +1,9 @@
 import axios from 'axios';
 import type {
   AuthResponse, ProduceResponse, FarmerResponse,
-  OrderResponse, CreateOrderRequest, CategoryStats
+  OrderResponse, CreateOrderRequest, CategoryStats,
+  RegionDto, CommodityDto, BuyOrderResponse, CreateBuyOrderRequest,
+  DeliveryEstimateRequest, DeliveryEstimateResponse,
 } from '../types';
 
 // In production the SPA is served by IIS which proxies /api -> the local API
@@ -27,6 +29,7 @@ export const login = (email: string, password: string) =>
 // Produce
 export const getProduce = (params?: {
   q?: string; category?: string; county?: string;
+  region?: string; country?: string; zone?: number;
   exportReady?: boolean; includeFuture?: boolean;
 }) => client.get<ProduceResponse[]>('/produce', { params }).then(r => r.data);
 
@@ -68,3 +71,21 @@ export const getMyOrders = () =>
 
 export const getFarmerOrders = () =>
   client.get<OrderResponse[]>('/orders/farmer').then(r => r.data);
+
+// Regions & commodities
+export const getRegions = () =>
+  client.get<RegionDto[]>('/regions').then(r => r.data);
+
+export const getCommodities = () =>
+  client.get<CommodityDto[]>('/commodities').then(r => r.data);
+
+// Buy orders (commodity order book)
+export const getBuyOrders = (params?: { commodity?: string; zone?: number; country?: string }) =>
+  client.get<BuyOrderResponse[]>('/buyorders', { params }).then(r => r.data);
+
+export const createBuyOrder = (data: CreateBuyOrderRequest) =>
+  client.post<BuyOrderResponse>('/buyorders', data).then(r => r.data);
+
+// Delivery estimate (public, no auth)
+export const estimateDelivery = (data: DeliveryEstimateRequest) =>
+  client.post<DeliveryEstimateResponse>('/delivery/estimate', data).then(r => r.data);

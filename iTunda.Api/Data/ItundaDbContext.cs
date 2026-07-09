@@ -13,6 +13,7 @@ public class ItundaDbContext : DbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Delivery> Deliveries => Set<Delivery>();
+    public DbSet<BuyOrder> BuyOrders => Set<BuyOrder>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -71,5 +72,9 @@ public class ItundaDbContext : DbContext
         modelBuilder.Entity<Delivery>()
             .Property(d => d.DeliveryFee)
             .HasPrecision(8, 2);
+
+        modelBuilder.Entity<BuyOrder>()
+            .Property(b => b.TargetPrice)
+            .HasPrecision(10, 2);
     }
 }

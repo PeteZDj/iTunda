@@ -54,7 +54,7 @@ public class LoginPage : ContentPage
                         },
                         new Label
                         {
-                            Text = "Kenya Farm-to-Fork Marketplace",
+                            Text = "Global Farm-to-Fork Marketplace",
                             FontSize = 14,
                             TextColor = Color.FromArgb("#A7E8C0"),
                             HorizontalTextAlignment = TextAlignment.Center

@@ -35,7 +35,16 @@ public class FarmerProfilePage : ContentPage
             {
                 backBtn,
                 new Label { Text = farmer.FarmName, FontSize = 24, FontAttributes = FontAttributes.Bold, TextColor = Colors.White },
-                new Label { Text = $"by {farmer.Name}", FontSize = 14, TextColor = Color.FromArgb("#A5D6A7") },
+                new HorizontalStackLayout
+                {
+                    Spacing = 7,
+                    Children =
+                    {
+                        new Image { Source = farmer.FlagUrl, WidthRequest = 22, HeightRequest = 15, VerticalOptions = LayoutOptions.Center },
+                        new Label { Text = farmer.LocationDisplay, FontSize = 14, TextColor = Color.FromArgb("#A5D6A7"), VerticalOptions = LayoutOptions.Center }
+                    }
+                },
+                new Label { Text = $"by {farmer.Name}", FontSize = 13, TextColor = Color.FromArgb("#A5D6A7") },
                 new HorizontalStackLayout
                 {
                     Spacing = 16,
@@ -49,6 +58,23 @@ public class FarmerProfilePage : ContentPage
                 }
             }
         };
+
+        // ── Farm photos strip ─────────────────────────────────────────────
+        View farmPhotos = new BoxView { IsVisible = false, HeightRequest = 0 };
+        if (farmer.FarmImages is { Count: > 0 })
+        {
+            var photoRow = new HorizontalStackLayout { Spacing = 10, Padding = new Thickness(16, 12, 16, 0) };
+            foreach (var src in farmer.FarmImages)
+            {
+                photoRow.Children.Add(new Frame
+                {
+                    CornerRadius = 12, Padding = 0, IsClippedToBounds = true, HasShadow = true,
+                    WidthRequest = 220, HeightRequest = 140,
+                    Content = new Image { Source = src, Aspect = Aspect.AspectFill, WidthRequest = 220, HeightRequest = 140, BackgroundColor = Color.FromArgb("#E9F6EE") }
+                });
+            }
+            farmPhotos = new ScrollView { Orientation = ScrollOrientation.Horizontal, HorizontalScrollBarVisibility = ScrollBarVisibility.Never, Content = photoRow };
+        }
 
         // ── Info card ─────────────────────────────────────────────────────
         var infoCard = new Frame
@@ -66,6 +92,7 @@ public class FarmerProfilePage : ContentPage
                     new Label { Text = "Farm Information", FontSize = 15, FontAttributes = FontAttributes.Bold, TextColor = Primary },
                     new BoxView { BackgroundColor = Color.FromArgb("#EEE"), HeightRequest = 1 },
                     InfoRow("Location", farmer.LocationDisplay),
+                    InfoRow("Export Zone", $"Zone {farmer.Zone}"),
                     InfoRow("Specialization", farmer.Specialization ?? "Mixed Produce"),
                     InfoRow("Certifications", farmer.Certifications ?? "—"),
                     InfoRow("Export", farmer.AbleToExportDirectly ? $"Yes — {farmer.ExportsDomain}" : "No"),
@@ -92,8 +119,8 @@ public class FarmerProfilePage : ContentPage
                         new BoxView { BackgroundColor = Color.FromArgb("#EEE"), HeightRequest = 1 },
                         InfoRow("Latitude", $"{farmer.FarmLatitude:0.0000}°"),
                         InfoRow("Longitude", $"{farmer.FarmLongitude:0.0000}°"),
-                        InfoRow("County", farmer.LocationCounty ?? "—"),
-                        InfoRow("Sub-County", farmer.LocationSubCounty ?? "—")
+                        InfoRow("Region", farmer.LocationDisplay),
+                        MapsButton(farmer)
                     }
                 }
             }
@@ -139,9 +166,31 @@ public class FarmerProfilePage : ContentPage
         {
             Content = new VerticalStackLayout
             {
-                Children = { header, infoCard, gpsCard, descCard, contactBtn }
+                Children = { header, farmPhotos, infoCard, gpsCard, descCard, contactBtn }
             }
         };
+    }
+
+    private static Button MapsButton(FarmerResponse farmer)
+    {
+        var btn = new Button
+        {
+            Text = "🗺  Open meet-up point in Google Maps",
+            BackgroundColor = Colors.White,
+            TextColor = Primary,
+            BorderColor = Accent,
+            BorderWidth = 1.5,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 24,
+            HeightRequest = 46,
+            FontSize = 13,
+            Margin = new Thickness(0, 6, 0, 0)
+        };
+        btn.Clicked += async (_, _) =>
+        {
+            try { await Launcher.OpenAsync(new Uri(farmer.GoogleMapsUrl)); } catch { }
+        };
+        return btn;
     }
 
     private static VerticalStackLayout StatChip(string value, string label) =>

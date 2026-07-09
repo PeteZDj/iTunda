@@ -1,0 +1,86 @@
+.commodity-ticker {
+  position: sticky;
+  top: 66px;
+  z-index: 90;
+  display: flex;
+  align-items: stretch;
+  background: var(--green-950);
+  color: #fff;
+  height: 38px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.tk-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  background: var(--amber);
+  color: #3a2500;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  z-index: 2;
+}
+.tk-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #b91c1c; box-shadow: 0 0 0 0 rgba(185,28,28,0.6);
+  animation: tk-pulse 1.4s infinite;
+}
+@keyframes tk-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(185,28,28,0.6); }
+  70% { box-shadow: 0 0 0 6px rgba(185,28,28,0); }
+  100% { box-shadow: 0 0 0 0 rgba(185,28,28,0); }
+}
+
+.tk-viewport { position: relative; flex: 1; overflow: hidden; }
+.tk-viewport::before,
+.tk-viewport::after {
+  content: '';
+  position: absolute; top: 0; bottom: 0; width: 36px; z-index: 3; pointer-events: none;
+}
+.tk-viewport::before { left: 0; background: linear-gradient(90deg, var(--green-950), transparent); }
+.tk-viewport::after { right: 0; background: linear-gradient(270deg, var(--green-950), transparent); }
+
+.tk-track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  align-items: center;
+  animation: tk-scroll linear infinite;
+}
+.tk-track:hover { animation-play-state: paused; }
+@keyframes tk-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.tk-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 6px;
+  background: none;
+  border: none;
+  color: #eafff1;
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tk-icon { width: 18px; height: 18px; }
+.tk-name { font-weight: 600; }
+.tk-price { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.tk-change { font-weight: 800; font-size: 12px; font-variant-numeric: tabular-nums; }
+.tk-change.up { color: #4ade80; }
+.tk-change.down { color: #ff6b6b; }
+.tk-sep { color: rgba(255,255,255,0.18); margin: 0 4px; }
+
+@media (max-width: 640px) {
+  .commodity-ticker { top: 66px; }
+  .tk-tag { padding: 0 9px; font-size: 10px; }
+}
