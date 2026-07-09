@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import { login } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
@@ -11,6 +12,27 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login: setSession } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return;
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/gauth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+      if (!res.ok) throw new Error('failed');
+      const data = await res.json();
+      setSession({ token: data.token, userId: 0, name: data.user.name, email: data.user.email, role: 'Buyer' });
+      navigate('/browse');
+    } catch {
+      setError('Google sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +70,18 @@ export default function LoginPage() {
 
           {error && <div className="alert alert-error">{error}</div>}
 
+          <div className="google-signin-wrap">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google sign-in failed. Please try again.')}
+              width="100%"
+              text="signin_with"
+              shape="rectangular"
+            />
+          </div>
+
+          <div className="auth-divider"><span>or sign in with email</span></div>
+
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="field-group">
               <label className="field-label">Email Address</label>
@@ -63,6 +97,7 @@ export default function LoginPage() {
           </form>
 
           <div className="auth-divider"><span>or try a demo account</span></div>
+
           <div className="demo-accounts">
             <button className="demo-btn" onClick={() => { setEmail('orders@nairobifresh.ke'); setPassword('Password123!'); }}>
               🏪 Buyer Demo

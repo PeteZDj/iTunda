@@ -158,3 +158,12 @@
   .auth-left { display: none; }
   .auth-right { padding: 40px 24px; align-items: flex-start; }
 }
+
+.google-signin-wrap {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: center;
+}
+.google-signin-wrap > div {
+  width: 100% !important;
+}
