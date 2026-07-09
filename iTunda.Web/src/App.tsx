@@ -33,7 +33,7 @@ export default function App() {
             <WithNav>
               <div style={{ textAlign: 'center', padding: '80px 24px' }}>
                 <div style={{ fontSize: 60 }}>🌿</div>
-                <h2 style={{ marginTop: 16, color: '#1A3A2A' }}>Page not found</h2>
+                <h2 style={{ marginTop: 16, color: '#0a5226' }}>Page not found</h2>
                 <a href="/" className="btn btn-primary" style={{ marginTop: 20, display: 'inline-flex' }}>Go Home</a>
               </div>
             </WithNav>

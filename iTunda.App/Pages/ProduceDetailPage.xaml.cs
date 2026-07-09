@@ -5,9 +5,9 @@ namespace iTunda.App.Pages;
 
 public class ProduceDetailPage : ContentPage
 {
-    static readonly Color Primary = Color.FromArgb("#1A3A2A");
-    static readonly Color Accent  = Color.FromArgb("#00BFA5");
-    static readonly Color Amber   = Color.FromArgb("#FF8F00");
+    static readonly Color Primary = Color.FromArgb("#0A4A26");
+    static readonly Color Accent  = Color.FromArgb("#16A34A");
+    static readonly Color Amber   = Color.FromArgb("#F4A621");
 
     private readonly ApiClient _api;
     private readonly AppState _appState;
@@ -19,7 +19,7 @@ public class ProduceDetailPage : ContentPage
         _appState = appState;
         _item = item;
         NavigationPage.SetHasNavigationBar(this, false);
-        BackgroundColor = Color.FromArgb("#F5F5F5");
+        BackgroundColor = Color.FromArgb("#F3FAF5");
 
         // ── Dark header (Teachify InstructorProfilePage style) ────────────
         var header = new Grid
@@ -223,7 +223,7 @@ public class ProduceDetailPage : ContentPage
             Children =
             {
                 new Label { Text = label, FontSize = 10, TextColor = Colors.Gray, FontAttributes = FontAttributes.Bold },
-                new Label { Text = value, FontSize = 14, TextColor = Color.FromArgb("#1A3A2A"), FontAttributes = FontAttributes.Bold }
+                new Label { Text = value, FontSize = 14, TextColor = Color.FromArgb("#0A4A26"), FontAttributes = FontAttributes.Bold }
             }
         };
 

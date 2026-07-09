@@ -9,7 +9,7 @@ public class ApiClient
     private readonly HttpClient _http;
     private readonly AppState _appState;
 
-    public const string BaseUrl = "http://localhost:5080/api";
+    public const string BaseUrl = "http://localhost:5088/api";
 
     public ApiClient(AppState appState)
     {

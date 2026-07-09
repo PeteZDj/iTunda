@@ -3,12 +3,13 @@ using iTunda.App.Services;
 
 namespace iTunda.App.Pages;
 
-// Teachify-style: dark header band, centered logo, rounded entry fields, amber action button
+// White-on-green: deep green header band, centered leaf logo, rounded fields,
+// gold action button, overlapping white card.
 public class LoginPage : ContentPage
 {
-    static readonly Color Primary = Color.FromArgb("#1A3A2A");    // deep forest green
-    static readonly Color Accent  = Color.FromArgb("#00BFA5");    // teal
-    static readonly Color Amber   = Color.FromArgb("#FF8F00");    // amber action
+    static readonly Color Primary = Color.FromArgb("#0A4A26");    // deep forest green
+    static readonly Color Accent  = Color.FromArgb("#16A34A");    // fresh green
+    static readonly Color Amber   = Color.FromArgb("#F4A621");    // harvest gold
 
     private readonly ApiClient _api;
     private readonly AppState _appState;
@@ -22,21 +23,27 @@ public class LoginPage : ContentPage
         _api = api;
         _appState = appState;
         NavigationPage.SetHasNavigationBar(this, false);
-        BackgroundColor = Color.FromArgb("#F5F5F5");
+        BackgroundColor = Color.FromArgb("#F3FAF5");
 
-        // ── Dark header band with logo ─────────────────────────────────────
+        // ── Deep green header band with leaf logo ──────────────────────────
         var header = new Grid
         {
             BackgroundColor = Primary,
-            Padding = new Thickness(0, 60, 0, 40),
+            Padding = new Thickness(0, 64, 0, 48),
             Children =
             {
                 new VerticalStackLayout
                 {
                     HorizontalOptions = LayoutOptions.Center,
-                    Spacing = 6,
+                    Spacing = 4,
                     Children =
                     {
+                        new Label
+                        {
+                            Text = "\U0001F33F",
+                            FontSize = 46,
+                            HorizontalTextAlignment = TextAlignment.Center
+                        },
                         new Label
                         {
                             Text = "iTunda",
@@ -47,9 +54,9 @@ public class LoginPage : ContentPage
                         },
                         new Label
                         {
-                            Text = "Farm to Fork Marketplace",
+                            Text = "Kenya Farm-to-Fork Marketplace",
                             FontSize = 14,
-                            TextColor = Color.FromArgb("#A5D6A7"),
+                            TextColor = Color.FromArgb("#A7E8C0"),
                             HorizontalTextAlignment = TextAlignment.Center
                         }
                     }
@@ -60,6 +67,9 @@ public class LoginPage : ContentPage
         // ── Form card ──────────────────────────────────────────────────────
         _emailEntry = StyledEntry("Email address", Keyboard.Email);
         _passwordEntry = StyledEntry("Password", isPassword: true);
+        // Prefill a demo account for a one-tap sign-in demo.
+        _emailEntry.Text = "james.kamau@farm.ke";
+        _passwordEntry.Text = "Password123!";
 
         _errorLabel = new Label
         {
@@ -80,10 +90,10 @@ public class LoginPage : ContentPage
         {
             Text = "SIGN IN",
             BackgroundColor = Amber,
-            TextColor = Colors.White,
+            TextColor = Color.FromArgb("#3A2600"),
             FontAttributes = FontAttributes.Bold,
-            CornerRadius = 30,
-            HeightRequest = 52,
+            CornerRadius = 28,
+            HeightRequest = 54,
             FontSize = 16
         };
         loginBtn.Clicked += OnLoginClicked;
@@ -104,21 +114,42 @@ public class LoginPage : ContentPage
         signupGesture.Tapped += OnGoToRegisterTapped;
         signupLink.GestureRecognizers.Add(signupGesture);
 
+        var demoHint = new Frame
+        {
+            BackgroundColor = Color.FromArgb("#E9F6EE"),
+            BorderColor = Color.FromArgb("#C6E9D3"),
+            CornerRadius = 10,
+            HasShadow = false,
+            Padding = new Thickness(12, 8),
+            Content = new Label
+            {
+                FormattedText = new FormattedString
+                {
+                    Spans =
+                    {
+                        new Span { Text = "Demo login  ", TextColor = Primary, FontSize = 12, FontAttributes = FontAttributes.Bold },
+                        new Span { Text = "james.kamau@farm.ke · Password123!", TextColor = Color.FromArgb("#3B5044"), FontSize = 12 }
+                    }
+                },
+                HorizontalTextAlignment = TextAlignment.Center
+            }
+        };
+
         var card = new Frame
         {
             BackgroundColor = Colors.White,
-            CornerRadius = 12,
+            CornerRadius = 18,
             HasShadow = true,
-            Margin = new Thickness(24, -30, 24, 0),
-            Padding = new Thickness(24, 28),
+            Margin = new Thickness(24, -34, 24, 24),
+            Padding = new Thickness(24, 30),
             Content = new VerticalStackLayout
             {
                 Spacing = 14,
                 Children =
                 {
-                    new Label { Text = "Welcome Back", FontSize = 20, FontAttributes = FontAttributes.Bold, TextColor = Primary },
+                    new Label { Text = "Welcome Back", FontSize = 22, FontAttributes = FontAttributes.Bold, TextColor = Primary },
                     new Label { Text = "Sign in to your iTunda account", FontSize = 13, TextColor = Colors.Gray },
-                    new BoxView { HeightRequest = 4 },
+                    new BoxView { HeightRequest = 4, Color = Colors.Transparent },
                     FieldLabel("Email"),
                     _emailEntry,
                     FieldLabel("Password"),
@@ -126,6 +157,7 @@ public class LoginPage : ContentPage
                     _spinner,
                     _errorLabel,
                     loginBtn,
+                    demoHint,
                     signupLink
                 }
             }
@@ -146,7 +178,7 @@ public class LoginPage : ContentPage
             Placeholder = placeholder,
             IsPassword = isPassword,
             Keyboard = keyboard ?? Keyboard.Default,
-            BackgroundColor = Color.FromArgb("#F0F0F0"),
+            BackgroundColor = Color.FromArgb("#F1F6F2"),
             TextColor = Colors.Black,
             PlaceholderColor = Colors.Gray,
             Margin = new Thickness(0),

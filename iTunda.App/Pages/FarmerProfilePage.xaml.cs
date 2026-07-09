@@ -5,14 +5,14 @@ namespace iTunda.App.Pages;
 
 public class FarmerProfilePage : ContentPage
 {
-    static readonly Color Primary = Color.FromArgb("#1A3A2A");
-    static readonly Color Accent  = Color.FromArgb("#00BFA5");
-    static readonly Color Amber   = Color.FromArgb("#FF8F00");
+    static readonly Color Primary = Color.FromArgb("#0A4A26");
+    static readonly Color Accent  = Color.FromArgb("#16A34A");
+    static readonly Color Amber   = Color.FromArgb("#F4A621");
 
     public FarmerProfilePage(ApiClient api, AppState appState, FarmerResponse farmer)
     {
         NavigationPage.SetHasNavigationBar(this, false);
-        BackgroundColor = Color.FromArgb("#F5F5F5");
+        BackgroundColor = Color.FromArgb("#F3FAF5");
 
         // ── Dark header ───────────────────────────────────────────────────
         var backBtn = new Button

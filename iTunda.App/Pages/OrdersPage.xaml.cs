@@ -5,9 +5,9 @@ namespace iTunda.App.Pages;
 
 public class OrdersPage : ContentPage
 {
-    static readonly Color Primary = Color.FromArgb("#1A3A2A");
-    static readonly Color Accent  = Color.FromArgb("#00BFA5");
-    static readonly Color Amber   = Color.FromArgb("#FF8F00");
+    static readonly Color Primary = Color.FromArgb("#0A4A26");
+    static readonly Color Accent  = Color.FromArgb("#16A34A");
+    static readonly Color Amber   = Color.FromArgb("#F4A621");
 
     private readonly ApiClient _api;
     private readonly AppState _appState;
@@ -20,7 +20,7 @@ public class OrdersPage : ContentPage
         _api = api;
         _appState = appState;
         Title = "Orders";
-        BackgroundColor = Color.FromArgb("#F5F5F5");
+        BackgroundColor = Color.FromArgb("#F3FAF5");
 
         _spinner = new ActivityIndicator
         {

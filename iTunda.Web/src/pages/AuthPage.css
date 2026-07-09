@@ -5,7 +5,7 @@
 }
 
 .auth-left {
-  background: linear-gradient(145deg, #0d2218 0%, #1A3A2A 60%, #1e4d35 100%);
+  background: linear-gradient(145deg, #0a4a26 0%, #0e7a3e 60%, #12833f 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,7 +19,7 @@
   width: 400px;
   height: 400px;
   border-radius: 50%;
-  background: rgba(0,191,165,0.15);
+  background: rgba(255,255,255,0.14);
   top: -100px;
   right: -100px;
 }
@@ -135,7 +135,7 @@
 }
 .demo-btn:hover {
   border-color: var(--accent);
-  background: #e0faf7;
+  background: var(--accent-light);
   color: var(--primary);
 }
 

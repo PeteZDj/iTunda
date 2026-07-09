@@ -4,7 +4,10 @@ import type {
   OrderResponse, CreateOrderRequest, CategoryStats
 } from '../types';
 
-const BASE = 'http://localhost:5080/api';
+// In production the SPA is served by IIS which proxies /api -> the local API
+// service. In dev, Vite proxies /api -> http://localhost:5088 (see vite.config.ts).
+// Override with VITE_API_BASE if needed.
+const BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
 const client = axios.create({ baseURL: BASE });
 

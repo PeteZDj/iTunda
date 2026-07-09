@@ -5,9 +5,9 @@ namespace iTunda.App.Pages;
 
 public class BrowsePage : ContentPage
 {
-    static readonly Color Primary = Color.FromArgb("#1A3A2A");
-    static readonly Color Accent  = Color.FromArgb("#00BFA5");
-    static readonly Color Amber   = Color.FromArgb("#FF8F00");
+    static readonly Color Primary = Color.FromArgb("#0A4A26");
+    static readonly Color Accent  = Color.FromArgb("#16A34A");
+    static readonly Color Amber   = Color.FromArgb("#F4A621");
 
     private static readonly string[] Categories = {
         "Avocados", "Macadamia Nuts", "French Beans", "Tea",
@@ -29,7 +29,7 @@ public class BrowsePage : ContentPage
         _api = api;
         _appState = appState;
         Title = "Browse";
-        BackgroundColor = Color.FromArgb("#F5F5F5");
+        BackgroundColor = Color.FromArgb("#F3FAF5");
 
         _searchEntry = new Entry
         {

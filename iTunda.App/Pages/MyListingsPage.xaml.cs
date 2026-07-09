@@ -6,9 +6,9 @@ namespace iTunda.App.Pages;
 
 public class MyListingsPage : ContentPage
 {
-    static readonly Color Primary = Color.FromArgb("#1A3A2A");
-    static readonly Color Accent  = Color.FromArgb("#00BFA5");
-    static readonly Color Amber   = Color.FromArgb("#FF8F00");
+    static readonly Color Primary = Color.FromArgb("#0A4A26");
+    static readonly Color Accent  = Color.FromArgb("#16A34A");
+    static readonly Color Amber   = Color.FromArgb("#F4A621");
 
     private static readonly string[] Categories = {
         "Avocados", "Macadamia Nuts", "French Beans", "Tea",
@@ -32,7 +32,7 @@ public class MyListingsPage : ContentPage
     {
         _api = api;
         Title = "My Listings";
-        BackgroundColor = Color.FromArgb("#F5F5F5");
+        BackgroundColor = Color.FromArgb("#F3FAF5");
 
         // ── Form card ──────────────────────────────────────────────────────
         _nameEntry = StyledEntry("Produce variety (e.g. Hass Avocado)");
@@ -193,7 +193,7 @@ public class MyListingsPage : ContentPage
             Spacing = 2,
             Children =
             {
-                new Label { Text = p.Name, FontSize = 15, FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#1A3A2A") },
+                new Label { Text = p.Name, FontSize = 15, FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#0A4A26") },
                 new Label { Text = $"{p.Category}  •  {p.QuantityDisplay}", FontSize = 13, TextColor = Colors.Gray },
                 new Label { Text = p.ExpiryDisplay, FontSize = 12, TextColor = p.ExpiryDate.HasValue && p.ExpiryDate < DateTime.UtcNow.AddDays(7) ? Colors.Red : Colors.Gray }
             }
@@ -203,7 +203,7 @@ public class MyListingsPage : ContentPage
             Text = p.PriceDisplay,
             FontSize = 14,
             FontAttributes = FontAttributes.Bold,
-            TextColor = Color.FromArgb("#FF8F00"),
+            TextColor = Color.FromArgb("#F4A621"),
             VerticalTextAlignment = TextAlignment.Center
         }, 1, 0);
 

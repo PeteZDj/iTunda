@@ -18,7 +18,7 @@ export default function Navbar() {
       <div className="navbar-inner page-container">
         <Link to="/" className="nav-logo">
           <span className="nav-logo-icon">🌿</span>
-          <span className="nav-logo-text">iTunda</span>
+          <span className="nav-logo-text">i<b>Tunda</b></span>
         </Link>
 
         <button className="nav-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
