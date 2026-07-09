@@ -1,0 +1,80 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { login } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import './AuthPage.css';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login: setSession } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!email || !password) { setError('Please fill in all fields.'); return; }
+    setLoading(true);
+    try {
+      const auth = await login(email, password);
+      setSession(auth);
+      navigate('/browse');
+    } catch (err: any) {
+      setError(err?.response?.data || 'Invalid email or password.');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="auth-page">
+      <div className="auth-left">
+        <div className="auth-left-content">
+          <div className="auth-brand">🌿 iTunda</div>
+          <h1 className="auth-headline">Kenya's farm-to-fork marketplace</h1>
+          <p className="auth-tagline">Connect directly with certified farmers across 47 counties</p>
+          <div className="auth-features">
+            {['1,000+ fresh produce listings','Real GPS farm locations','Export-ready certification','Live expiry tracking'].map(f => (
+              <div key={f} className="auth-feature">✓ {f}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="auth-right">
+        <div className="auth-card">
+          <h2 className="auth-title">Welcome back</h2>
+          <p className="auth-subtitle">Sign in to your iTunda account</p>
+
+          {error && <div className="alert alert-error">{error}</div>}
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="field-group">
+              <label className="field-label">Email Address</label>
+              <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+            </div>
+            <div className="field-group">
+              <label className="field-label">Password</label>
+              <input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+            </div>
+            <button className="btn btn-primary w-full" type="submit" disabled={loading} style={{ width: '100%', justifyContent: 'center', borderRadius: 8, marginTop: 4 }}>
+              {loading ? 'Signing in…' : 'Sign In'}
+            </button>
+          </form>
+
+          <div className="auth-divider"><span>or try a demo account</span></div>
+          <div className="demo-accounts">
+            <button className="demo-btn" onClick={() => { setEmail('orders@nairobifresh.ke'); setPassword('Password123!'); }}>
+              🏪 Buyer Demo
+            </button>
+            <button className="demo-btn" onClick={() => { setEmail('james.kamau@farm.ke'); setPassword('Password123!'); }}>
+              🌾 Farmer Demo
+            </button>
+          </div>
+
+          <p className="auth-switch">Don't have an account? <Link to="/register">Sign up free →</Link></p>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,17 @@
+using iTunda.Api.Models;
+
+namespace iTunda.Api.Dtos;
+
+public record CreateOrderItemRequest(int ProduceId, double Quantity);
+
+public record CreateOrderRequest(string? DeliveryAddress, List<CreateOrderItemRequest> Items);
+
+public record OrderItemResponse(int ProduceId, string ProduceName, double Quantity, decimal UnitPriceAtOrder);
+
+public record OrderResponse(
+    int Id,
+    OrderStatus Status,
+    string? DeliveryAddress,
+    decimal TotalAmount,
+    DateTime CreatedAt,
+    List<OrderItemResponse> Items);

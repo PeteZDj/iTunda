@@ -1,0 +1,114 @@
+.dash-page {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: calc(100vh - 64px);
+  align-items: start;
+}
+
+.dash-sidebar {
+  background: var(--primary);
+  min-height: calc(100vh - 64px);
+  position: sticky;
+  top: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.dash-profile {
+  padding: 28px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  text-align: center;
+}
+.dash-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 24px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+}
+.dash-profile-name { font-size: 15px; font-weight: 800; color: #fff; }
+.dash-profile-sub { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+.dash-profile-stat { font-size: 12px; color: var(--accent); margin-top: 6px; font-weight: 700; }
+
+.dash-nav { display: flex; flex-direction: column; padding: 12px 12px; gap: 4px; }
+.dash-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s;
+  text-align: left;
+  font-family: inherit;
+}
+.dash-nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.dash-nav-btn.active { background: var(--accent); color: #fff; }
+.dash-nav-count {
+  background: rgba(255,255,255,0.2);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.dash-nav-btn.active .dash-nav-count { background: rgba(255,255,255,0.25); }
+
+.dash-view-btn { margin: auto 16px 20px; width: calc(100% - 32px); justify-content: center; }
+
+.dash-main { padding: 28px 28px 60px; min-width: 0; }
+.dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; }
+.dash-title { font-size: 24px; font-weight: 800; color: var(--primary); }
+
+.dash-empty { text-align: center; padding: 60px 0; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.dash-empty h3 { font-size: 20px; color: var(--text); }
+
+.dash-listings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.dash-listing-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px;
+  border: 1.5px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.18s;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dash-listing-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,191,165,0.1); }
+
+.dlc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.dlc-name { font-size: 16px; font-weight: 700; color: var(--primary); }
+.dlc-cat { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.dlc-price { font-size: 14px; font-weight: 800; color: var(--amber); white-space: nowrap; text-align: right; flex-shrink: 0; }
+.dlc-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--muted); align-items: center; }
+.dlc-scheduled { font-size: 12px; color: var(--amber); font-weight: 600; background: #FFF8E1; padding: 5px 10px; border-radius: 6px; }
+
+.dash-form-wrap { max-width: 780px; }
+.dash-form { display: flex; flex-direction: column; gap: 0; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) {
+  .form-row-2, .form-row-3 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .dash-page { grid-template-columns: 1fr; }
+  .dash-sidebar { position: static; min-height: auto; flex-direction: row; flex-wrap: wrap; }
+  .dash-profile { flex: 1; border-right: 1px solid rgba(255,255,255,0.1); border-bottom: none; }
+  .dash-nav { flex-direction: row; flex-wrap: wrap; padding: 8px; }
+  .dash-nav-btn { flex: none; }
+}

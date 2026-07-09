@@ -1,0 +1,63 @@
+.fp-hero {
+  background: linear-gradient(135deg, #0d2218 0%, #1A3A2A 60%, #2E7D32 100%);
+  padding: 48px 0 36px;
+}
+.fp-hero-inner {}
+.fp-back {
+  display: inline-block;
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 24px;
+  transition: color 0.15s;
+}
+.fp-back:hover { color: var(--accent); }
+
+.fp-hero-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.fp-avatar-xl {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 30px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  border: 3px solid rgba(255,255,255,0.2);
+}
+.fp-farm-name { font-size: 26px; font-weight: 800; color: #fff; }
+.fp-by { font-size: 15px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+.fp-phone { font-size: 14px; color: var(--accent-light); margin-top: 4px; }
+
+.fp-stats {
+  display: flex;
+  gap: 24px;
+  margin-left: auto;
+  background: rgba(255,255,255,0.08);
+  padding: 16px 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.fp-stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.fp-stat-v { font-size: 22px; font-weight: 800; color: #fff; }
+.fp-stat-l { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.fp-body { padding: 32px 24px 60px; }
+.fp-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+@media (max-width: 900px) { .fp-grid { grid-template-columns: 1fr; } }
+
+.fp-info-col {}
+.card-section-title { font-size: 14px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
+.fp-info-row { display: grid; grid-template-columns: 150px 1fr; gap: 8px; padding: 9px 0; border-bottom: 1px solid #f8f8f8; font-size: 14px; }
+.fp-info-label { color: var(--muted); font-weight: 600; }
+.fp-info-value { color: var(--text); }
+
+.fp-gps-card { display: flex; gap: 14px; align-items: flex-start; background: #e8f5e9; padding: 16px; border-radius: 10px; }
+.fp-gps-icon { font-size: 28px; flex-shrink: 0; }
+
+.fp-listings-title { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 16px; }
+.fp-listings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }

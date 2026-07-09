@@ -1,0 +1,42 @@
+namespace iTunda.Api.Dtos;
+
+public record ProduceResponse(
+    int Id,
+    string Name,
+    string Category,
+    string? Description,
+    decimal Price,
+    string Unit,
+    double QuantityAvailable,
+    string? ImagePath,
+    DateTime? HarvestDate,
+    DateTime? ExpiryDate,
+    DateTime? AvailableFrom,
+    bool IsExportReady,
+    string? GradeQuality,
+    int FarmerProfileId,
+    string FarmerName,
+    string? FarmerPhone,
+    string? FarmerImage,
+    string? FarmName,
+    string? County,
+    string? SubCounty,
+    string? Town,
+    double? FarmLatitude,
+    double? FarmLongitude,
+    double FarmerRating,
+    int FarmerOrdersFulfilled);
+
+public record CreateProduceRequest(
+    string Name,
+    string Category,
+    string? Description,
+    decimal Price,
+    string Unit,
+    double QuantityAvailable,
+    string? ImagePath,
+    DateTime? HarvestDate,
+    DateTime? ExpiryDate,
+    DateTime? AvailableFrom,
+    bool IsExportReady = false,
+    string? GradeQuality = null);

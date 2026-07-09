@@ -1,0 +1,34 @@
+## .NET / ASP.NET Core
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+.vs/
+*.db
+*.db-shm
+*.db-wal
+
+## .NET MAUI
+**/platforms/android/build/
+**/platforms/ios/build/
+*.binlog
+
+## Node / Vite (React app)
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*
+!.env.example
+
+## Logs & temp
+*.log
+*.err.log
+npm-debug.log*
+
+## OS
+.DS_Store
+Thumbs.db
