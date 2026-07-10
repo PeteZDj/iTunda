@@ -199,10 +199,60 @@ public static class SeedData
                 IsActive = true,
                 IsExportReady = exportReady,
                 GradeQuality = grade,
+                DeliveryScope = exportReady ? (rng.Next(2) == 0 ? "Export" : "Both") : "Local",
                 CreatedAt = availableFrom ?? now.AddDays(-rng.Next(0, 60))
             });
         }
         db.Produce.AddRange(listings);
+        await db.SaveChangesAsync();
+
+        // ── Sample ads for the demo seller (james.kamau@farm.ke) ────────────
+        // Two live listings + two drafts, so the Account → My Ads view has data.
+        var demo = profiles[0];
+        var sampleAds = new[]
+        {
+            new Produce
+            {
+                FarmerProfileId = demo.Id, Name = "Hass Avocado", Category = "Avocados",
+                Description = "Premium export-grade Hass avocados, hand-picked and cold-stored. Consistent 12–16 count, dry matter 23%+.",
+                Price = 95, Unit = "kg", QuantityAvailable = 2400.5,
+                PlantingDate = now.AddDays(-540), HarvestDate = now.AddDays(-6), ExpiryDate = now.AddDays(28),
+                FarmLatitude = demo.FarmLatitude, FarmLongitude = demo.FarmLongitude,
+                IsActive = true, IsDraft = false, IsExportReady = true, GradeQuality = "Export Grade",
+                DeliveryScope = "Both", CreatedAt = now.AddDays(-6),
+            },
+            new Produce
+            {
+                FarmerProfileId = demo.Id, Name = "Fuerte Avocado", Category = "Avocados",
+                Description = "Smooth-skinned Fuerte avocados for the fresh local market. Great value, harvested to order.",
+                Price = 72, Unit = "kg", QuantityAvailable = 860.25,
+                PlantingDate = now.AddDays(-480), HarvestDate = now.AddDays(-2), ExpiryDate = now.AddDays(21),
+                FarmLatitude = demo.FarmLatitude, FarmLongitude = demo.FarmLongitude,
+                IsActive = true, IsDraft = false, IsExportReady = false, GradeQuality = "Grade A",
+                DeliveryScope = "Local", CreatedAt = now.AddDays(-2),
+            },
+            new Produce
+            {
+                FarmerProfileId = demo.Id, Name = "Reed Avocado (draft)", Category = "Avocados",
+                Description = "Large round Reed avocados — finishing paperwork and photos before publishing.",
+                Price = 88, Unit = "kg", QuantityAvailable = 500,
+                PlantingDate = now.AddDays(-500), HarvestDate = now.AddDays(7), ExpiryDate = now.AddDays(35),
+                FarmLatitude = demo.FarmLatitude, FarmLongitude = demo.FarmLongitude,
+                IsActive = true, IsDraft = true, IsExportReady = true, GradeQuality = "Export Grade",
+                DeliveryScope = "Export", CreatedAt = now.AddDays(-1),
+            },
+            new Produce
+            {
+                FarmerProfileId = demo.Id, Name = "Macadamia Nuts (draft)", Category = "Macadamia Nuts",
+                Description = "In-shell macadamia from the estate's new block. Draft — pricing to be confirmed.",
+                Price = 380, Unit = "kg", QuantityAvailable = 300,
+                PlantingDate = now.AddDays(-900), ExpiryDate = now.AddDays(120),
+                FarmLatitude = demo.FarmLatitude, FarmLongitude = demo.FarmLongitude,
+                IsActive = true, IsDraft = true, IsExportReady = false, GradeQuality = "Grade 1",
+                DeliveryScope = "Local", CreatedAt = now,
+            },
+        };
+        db.Produce.AddRange(sampleAds);
         await db.SaveChangesAsync();
 
         // ── Commodity buy orders (bids) ─────────────────────────────────────

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createOrder, createBuyOrder } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import LocationPicker from './LocationPicker';
 import type { OrderKind, OrderSide, CreateBuyOrderRequest } from '../types';
 import './TradeTicket.css';
 
@@ -45,6 +46,9 @@ export default function TradeTicket({ ctx, initialSide = 'Buy', initialKind = 'S
   const [priceCcy, setPriceCcy] = useState('');
   const [contractDate, setContractDate] = useState('');
   const [address, setAddress] = useState('');
+  const [deliveryScope, setDeliveryScope] = useState<'Local' | 'Export'>(
+    ctx.country && ctx.country !== 'Kenya' ? 'Export' : 'Local');
+  const [deliveryLoc, setDeliveryLoc] = useState<{ lat: number | null; lng: number | null }>({ lat: null, lng: null });
   const [trader, setTrader] = useState(name ?? '');
   const [contact, setContact] = useState('');
   const [busy, setBusy] = useState(false);
@@ -90,11 +94,17 @@ export default function TradeTicket({ ctx, initialSide = 'Buy', initialKind = 'S
 
     // Market BUY of a specific listing → a real fulfilled order (needs login).
     if (isMarketBuy) {
-      if (!isLoggedIn) { navigate('/login'); return; }
-      if (!address.trim()) { setErr('Enter a delivery address.'); return; }
+      if (!isLoggedIn) { navigate('/login?next=' + encodeURIComponent(window.location.pathname + window.location.search)); return; }
+      if (!address.trim()) { setErr('Enter or pin a delivery address.'); return; }
       setBusy(true);
       try {
-        await createOrder({ deliveryAddress: address, items: [{ produceId: ctx.produceId!, quantity: qtyNum }] });
+        await createOrder({
+          deliveryAddress: address,
+          items: [{ produceId: ctx.produceId!, quantity: qtyNum }],
+          deliveryScope,
+          deliveryLat: deliveryLoc.lat,
+          deliveryLng: deliveryLoc.lng,
+        });
         setOk('order');
         onPlaced?.();
       } catch (e: any) { setErr(e?.response?.data || 'Order failed. Please try again.'); }
@@ -177,7 +187,7 @@ export default function TradeTicket({ ctx, initialSide = 'Buy', initialKind = 'S
 
       <div className="tt-field">
         <label>Quantity ({ctx.unit})</label>
-        <input className="input" type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} />
+        <input className="input" type="number" min="0" step="any" value={qty} onChange={e => setQty(e.target.value)} />
       </div>
 
       {!isMarket && (
@@ -196,8 +206,18 @@ export default function TradeTicket({ ctx, initialSide = 'Buy', initialKind = 'S
 
       {isMarketBuy && (
         <div className="tt-field">
-          <label>Delivery address</label>
-          <textarea className="input textarea" rows={2} value={address} onChange={e => setAddress(e.target.value)} placeholder="Where should we deliver?" />
+          <label>Delivery</label>
+          <div className="tt-scope">
+            <button type="button" className={`tt-scope-btn ${deliveryScope === 'Local' ? 'active' : ''}`} onClick={() => setDeliveryScope('Local')}>🏠 Local</button>
+            <button type="button" className={`tt-scope-btn ${deliveryScope === 'Export' ? 'active' : ''}`} onClick={() => setDeliveryScope('Export')}>✈ Export</button>
+          </div>
+          <LocationPicker
+            lat={deliveryLoc.lat} lng={deliveryLoc.lng} label={address}
+            height={200}
+            placeholder="Search delivery address or drop a pin…"
+            onChange={v => { setDeliveryLoc({ lat: v.lat, lng: v.lng }); if (v.label) setAddress(v.label); }}
+            onLabelChange={setAddress}
+          />
         </div>
       )}
 

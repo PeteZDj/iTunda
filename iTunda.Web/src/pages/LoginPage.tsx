@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { login } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
 
 export default function LoginPage() {
+  const [params] = useSearchParams();
+  const next = params.get('next') || '/browse';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,8 +27,8 @@ export default function LoginPage() {
       });
       if (!res.ok) throw new Error('failed');
       const data = await res.json();
-      setSession({ token: data.token, userId: 0, name: data.user.name, email: data.user.email, role: 'Buyer' });
-      navigate('/browse');
+      setSession({ token: data.token, userId: 0, name: data.user.name, email: data.user.email, role: 'Buyer', imagePath: data.user.avatar });
+      navigate(next);
     } catch {
       setError('Google sign-in failed. Please try again.');
     } finally {
@@ -42,7 +44,7 @@ export default function LoginPage() {
     try {
       const auth = await login(email, password);
       setSession(auth);
-      navigate('/browse');
+      navigate(next);
     } catch (err: any) {
       setError(err?.response?.data || 'Invalid email or password.');
     } finally { setLoading(false); }
@@ -107,7 +109,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <p className="auth-switch">Don't have an account? <Link to="/register">Sign up free →</Link></p>
+          <p className="auth-switch">Don't have an account? <Link to={`/register?next=${encodeURIComponent(next)}`}>Sign up free →</Link></p>
         </div>
       </div>
     </div>

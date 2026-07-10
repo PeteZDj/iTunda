@@ -18,6 +18,12 @@ public class Order
 
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
     public string? DeliveryAddress { get; set; }
+
+    /// <summary>"Local" (within country) or "Export" (international).</summary>
+    public string DeliveryScope { get; set; } = "Local";
+    public double? DeliveryLat { get; set; }
+    public double? DeliveryLng { get; set; }
+
     public decimal TotalAmount { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

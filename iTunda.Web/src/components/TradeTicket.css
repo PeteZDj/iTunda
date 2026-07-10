@@ -10,6 +10,14 @@
 .tt-title { font-family: var(--font-head); font-weight: 800; font-size: 18px; color: var(--green-800); }
 .tt-ref { font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 
+.tt-scope { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.tt-scope-btn {
+  padding: 9px 0; border-radius: 9px; font-weight: 700; font-size: 13.5px; cursor: pointer;
+  border: 1.5px solid #dbe7e0; background: #fff; color: #35473c; transition: all .15s;
+}
+.tt-scope-btn:hover { border-color: var(--green-700, #0e7a3e); }
+.tt-scope-btn.active { border-color: var(--green-700, #0e7a3e); background: #eaf6ee; color: var(--green-800, #0a5226); }
+
 .tt-side { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .tt-side-btn {
   padding: 11px 0; border-radius: 10px; font-family: var(--font-head); font-weight: 800; font-size: 15px;

@@ -6,4 +6,15 @@ public record RegisterRequest(string Name, string Email, string Password, string
 
 public record LoginRequest(string Email, string Password);
 
-public record AuthResponse(string Token, int UserId, string Name, string? Email, UserRole Role);
+public record AuthResponse(string Token, int UserId, string Name, string? Email, UserRole Role, string? ImagePath = null);
+
+public record MeResponse(
+    int UserId,
+    string Name,
+    string? Email,
+    string? Phone,
+    UserRole Role,
+    string? ImagePath,
+    bool HasFarmerProfile);
+
+public record UpdateMeRequest(string Name, string? Phone, string? ImagePath);

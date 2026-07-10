@@ -33,7 +33,9 @@ public record ProduceResponse(
     int Zone,
     string ImageUrl,
     List<string> Gallery,
-    string IconUrl);
+    string IconUrl,
+    bool IsDraft,
+    string DeliveryScope);
 
 public record CreateProduceRequest(
     string Name,
@@ -51,4 +53,6 @@ public record CreateProduceRequest(
     DateTime? PlantingDate = null,
     double? FarmLatitude = null,
     double? FarmLongitude = null,
-    List<string>? Images = null);
+    List<string>? Images = null,
+    bool IsDraft = false,
+    string? DeliveryScope = null);

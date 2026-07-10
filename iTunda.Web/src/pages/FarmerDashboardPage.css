@@ -5,6 +5,20 @@
   align-items: start;
 }
 
+.dash-avatar { overflow: hidden; }
+.dash-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+.dash-nav-post {
+  text-decoration: none; display: block; margin: 8px 12px 0; text-align: center;
+  background: var(--amber, #f4a621); color: #3a2b00 !important; font-weight: 800;
+  border-radius: 9px; padding: 11px 0;
+}
+.dash-side-links { margin-top: auto; padding: 14px 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+
+.dash-subhead { color: #0a5226; font-size: 15px; margin: 6px 0 12px; }
+.dlc-actions { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.dash-listing-card { display: flex; flex-direction: column; }
+
 .dash-sidebar {
   background: var(--primary);
   min-height: calc(100vh - 64px);

@@ -6,6 +6,23 @@ export interface AuthResponse {
   name: string;
   email: string | null;
   role: UserRole;
+  imagePath?: string | null;
+}
+
+export interface MeResponse {
+  userId: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  role: UserRole;
+  imagePath: string | null;
+  hasFarmerProfile: boolean;
+}
+
+export interface UpdateMeRequest {
+  name: string;
+  phone?: string | null;
+  imagePath?: string | null;
 }
 
 export interface ProduceResponse {
@@ -42,6 +59,29 @@ export interface ProduceResponse {
   imageUrl: string;
   gallery: string[];
   iconUrl: string;
+  isDraft: boolean;
+  deliveryScope: string;
+}
+
+export interface CreateProduceRequest {
+  name: string;
+  category: string;
+  description?: string | null;
+  price: number;
+  unit: string;
+  quantityAvailable: number;
+  imagePath?: string | null;
+  harvestDate?: string | null;
+  expiryDate?: string | null;
+  availableFrom?: string | null;
+  isExportReady?: boolean;
+  gradeQuality?: string | null;
+  plantingDate?: string | null;
+  farmLatitude?: number | null;
+  farmLongitude?: number | null;
+  images?: string[];
+  isDraft?: boolean;
+  deliveryScope?: string | null;
 }
 
 export interface FarmerResponse {
@@ -82,6 +122,7 @@ export interface OrderResponse {
   id: number;
   status: string;
   deliveryAddress: string | null;
+  deliveryScope: string;
   totalAmount: number;
   createdAt: string;
   items: OrderItemResponse[];
@@ -90,6 +131,9 @@ export interface OrderResponse {
 export interface CreateOrderRequest {
   deliveryAddress: string;
   items: { produceId: number; quantity: number }[];
+  deliveryScope?: string;
+  deliveryLat?: number | null;
+  deliveryLng?: number | null;
 }
 
 export interface CategoryStats {

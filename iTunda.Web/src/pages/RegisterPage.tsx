@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { register } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', role: 1 });
+  const [params] = useSearchParams();
+  const next = params.get('next') || '/browse';
+  const [form, setForm] = useState({ name: params.get('name') ?? '', email: '', phone: '', password: '', role: 1 });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login: setSession } = useAuth();
@@ -27,8 +29,8 @@ export default function RegisterPage() {
       });
       if (!res.ok) throw new Error('failed');
       const data = await res.json();
-      setSession({ token: data.token, userId: 0, name: data.user.name, email: data.user.email, role: 'Buyer' });
-      navigate('/browse');
+      setSession({ token: data.token, userId: 0, name: data.user.name, email: data.user.email, role: 'Buyer', imagePath: data.user.avatar });
+      navigate(next);
     } catch {
       setError('Google sign-up failed. Please try again.');
     } finally {
@@ -45,7 +47,7 @@ export default function RegisterPage() {
     try {
       const auth = await register(form);
       setSession(auth);
-      navigate('/browse');
+      navigate(next);
     } catch (err: any) {
       setError(err?.response?.data || 'Registration failed. Try a different email.');
     } finally { setLoading(false); }
@@ -115,7 +117,7 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="auth-switch">Already have an account? <Link to="/login">Sign in →</Link></p>
+          <p className="auth-switch">Already have an account? <Link to={`/login?next=${encodeURIComponent(next)}`}>Sign in →</Link></p>
         </div>
       </div>
     </div>

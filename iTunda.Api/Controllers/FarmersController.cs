@@ -60,7 +60,7 @@ public class FarmersController : ControllerBase
     {
         var items = await _db.Produce
             .Include(p => p.FarmerProfile!.User)
-            .Where(p => p.FarmerProfileId == id && p.IsActive)
+            .Where(p => p.FarmerProfileId == id && p.IsActive && !p.IsDraft)
             .ToListAsync();
 
         return Ok(items.Select(ToProduceResponse));

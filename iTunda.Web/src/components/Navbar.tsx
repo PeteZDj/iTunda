@@ -5,7 +5,7 @@ import RegionSelector from './RegionSelector';
 import './Navbar.css';
 
 export default function Navbar() {
-  const { isLoggedIn, name, role, logout } = useAuth();
+  const { isLoggedIn, name, role, image, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -14,7 +14,8 @@ export default function Navbar() {
 
   const active = (path: string) => location.pathname === path ? 'nav-link active' : 'nav-link';
 
-  const sellHref = role === 'Farmer' ? '/dashboard' : '/register';
+  // Anyone can sell — the sell flow handles sign-up at publish time.
+  const sellHref = '/sell';
 
   return (
     <nav className="navbar">
@@ -50,7 +51,7 @@ export default function Navbar() {
               )}
               <div className="nav-user-menu">
                 <button className="nav-avatar">
-                  {name?.[0]?.toUpperCase() ?? '?'}
+                  {image ? <img src={image} alt={name ?? 'me'} /> : (name?.[0]?.toUpperCase() ?? '?')}
                 </button>
                 <div className="nav-dropdown">
                   <div className="nav-dropdown-header">

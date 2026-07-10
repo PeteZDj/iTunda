@@ -4,6 +4,7 @@ import type {
   OrderResponse, CreateOrderRequest, CategoryStats,
   RegionDto, CommodityDto, BuyOrderResponse, CreateBuyOrderRequest,
   DeliveryEstimateRequest, DeliveryEstimateResponse,
+  CreateProduceRequest, MeResponse, UpdateMeRequest,
 } from '../types';
 
 // In production the SPA is served by IIS which proxies /api -> the local API
@@ -26,6 +27,12 @@ export const register = (data: { name: string; email: string; password: string; 
 export const login = (email: string, password: string) =>
   client.post<AuthResponse>('/auth/login', { email, password }).then(r => r.data);
 
+export const getMe = () =>
+  client.get<MeResponse>('/auth/me').then(r => r.data);
+
+export const updateMe = (data: UpdateMeRequest) =>
+  client.put<MeResponse>('/auth/me', data).then(r => r.data);
+
 // Produce
 export const getProduce = (params?: {
   q?: string; category?: string; county?: string;
@@ -36,8 +43,18 @@ export const getProduce = (params?: {
 export const getProduceById = (id: number) =>
   client.get<ProduceResponse>(`/produce/${id}`).then(r => r.data);
 
-export const createProduce = (data: object) =>
+export const createProduce = (data: CreateProduceRequest) =>
   client.post<ProduceResponse>('/produce', data).then(r => r.data);
+
+export const updateProduce = (id: number, data: CreateProduceRequest) =>
+  client.put<ProduceResponse>(`/produce/${id}`, data).then(r => r.data);
+
+export const deleteProduce = (id: number) =>
+  client.delete(`/produce/${id}`).then(r => r.data);
+
+// The caller's own listings, including unpublished drafts.
+export const getMyProduce = () =>
+  client.get<ProduceResponse[]>('/produce/mine').then(r => r.data);
 
 // Categories
 export const getCategories = () =>

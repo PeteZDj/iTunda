@@ -21,11 +21,11 @@ public class OrdersController : ControllerBase
     }
 
     private static OrderResponse ToResponse(Order o) => new(
-        o.Id, o.Status, o.DeliveryAddress, o.TotalAmount, o.CreatedAt,
+        o.Id, o.Status, o.DeliveryAddress, o.DeliveryScope, o.TotalAmount, o.CreatedAt,
         o.Items.Select(i => new OrderItemResponse(i.ProduceId, i.Produce!.Name, i.Quantity, i.UnitPriceAtOrder)).ToList());
 
     [HttpPost]
-    [Authorize(Roles = nameof(UserRole.Buyer))]
+    [Authorize]
     public async Task<ActionResult<OrderResponse>> Create(CreateOrderRequest request)
     {
         if (request.Items is null || request.Items.Count == 0)
@@ -36,7 +36,10 @@ public class OrdersController : ControllerBase
         var order = new Order
         {
             BuyerUserId = userId,
-            DeliveryAddress = request.DeliveryAddress
+            DeliveryAddress = request.DeliveryAddress,
+            DeliveryScope = request.DeliveryScope == "Export" ? "Export" : "Local",
+            DeliveryLat = request.DeliveryLat,
+            DeliveryLng = request.DeliveryLng,
         };
 
         decimal total = 0;
@@ -83,7 +86,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("mine")]
-    [Authorize(Roles = nameof(UserRole.Buyer))]
+    [Authorize]
     public async Task<ActionResult<List<OrderResponse>>> GetMine()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

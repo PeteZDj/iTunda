@@ -41,7 +41,8 @@ public class ProduceController : ControllerBase
             lat, lng,
             p.FarmerProfile.RatingFarmer, p.FarmerProfile.OrdersFulfilled,
             p.FarmerProfile.Region, p.FarmerProfile.Country, p.FarmerProfile.CountryCode, p.FarmerProfile.Zone,
-            hero, gallery, Media.IconUrl(p.Category));
+            hero, gallery, Media.IconUrl(p.Category),
+            p.IsDraft, p.DeliveryScope);
     }
 
     private static List<string> ParseImages(string? json)
@@ -64,7 +65,7 @@ public class ProduceController : ControllerBase
     {
         var query = _db.Produce
             .Include(p => p.FarmerProfile!.User)
-            .Where(p => p.IsActive);
+            .Where(p => p.IsActive && !p.IsDraft);
 
         if (!includeFuture)
             query = query.Where(p => p.AvailableFrom == null || p.AvailableFrom <= DateTime.UtcNow);
@@ -112,31 +113,53 @@ public class ProduceController : ControllerBase
         return Ok(ToResponse(item));
     }
 
+    /// <summary>The caller's own listings, including unpublished drafts.</summary>
+    [HttpGet("mine")]
+    [Authorize]
+    public async Task<ActionResult<List<ProduceResponse>>> GetMine()
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var profile = await _db.FarmerProfiles.FirstOrDefaultAsync(f => f.UserId == userId);
+        if (profile is null) return Ok(new List<ProduceResponse>());
+
+        var items = await _db.Produce
+            .Include(p => p.FarmerProfile!.User)
+            .Where(p => p.FarmerProfileId == profile.Id && p.IsActive)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        return Ok(items.Select(ToResponse));
+    }
+
     [HttpPost]
-    [Authorize(Roles = nameof(UserRole.Farmer))]
+    [Authorize]
     public async Task<ActionResult<ProduceResponse>> Create(CreateProduceRequest request)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var farmerProfile = await _db.FarmerProfiles.FirstOrDefaultAsync(f => f.UserId == userId);
-        if (farmerProfile is null) return BadRequest("Farmer profile not found.");
+        // Anyone can sell — auto-provision a seller profile the first time.
+        var profile = await GetOrCreateSellerProfile(userId);
+        if (profile is null) return Unauthorized();
 
-        // Sellers must provide the essentials before a listing goes live.
         var images = request.Images?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new();
-        if (images.Count == 0 && string.IsNullOrWhiteSpace(request.ImagePath))
-            return BadRequest("At least one produce photo is required.");
-        if (request.PlantingDate is null)
-            return BadRequest("Planting date is required.");
-        if (request.ExpiryDate is null)
-            return BadRequest("Best-before date is required.");
+        var lat = request.FarmLatitude ?? profile.FarmLatitude;
+        var lng = request.FarmLongitude ?? profile.FarmLongitude;
 
-        var lat = request.FarmLatitude ?? farmerProfile.FarmLatitude;
-        var lng = request.FarmLongitude ?? farmerProfile.FarmLongitude;
-        if (lat is null || lng is null)
-            return BadRequest("Farm location (GPS) is required.");
+        // Published listings must carry the essentials; drafts can be incomplete.
+        if (!request.IsDraft)
+        {
+            if (images.Count == 0 && string.IsNullOrWhiteSpace(request.ImagePath))
+                return BadRequest("At least one produce photo is required.");
+            if (request.PlantingDate is null)
+                return BadRequest("Planting date is required.");
+            if (request.ExpiryDate is null)
+                return BadRequest("Best-before date is required.");
+            if (lat is null || lng is null)
+                return BadRequest("Farm location (GPS) is required.");
+        }
 
         var produce = new Produce
         {
-            FarmerProfileId = farmerProfile.Id,
+            FarmerProfileId = profile.Id,
             Name = request.Name,
             Category = request.Category,
             Description = request.Description,
@@ -152,7 +175,9 @@ public class ProduceController : ControllerBase
             FarmLatitude = lat,
             FarmLongitude = lng,
             IsExportReady = request.IsExportReady,
-            GradeQuality = request.GradeQuality
+            GradeQuality = request.GradeQuality,
+            IsDraft = request.IsDraft,
+            DeliveryScope = NormalizeScope(request.DeliveryScope),
         };
 
         _db.Produce.Add(produce);
@@ -164,8 +189,63 @@ public class ProduceController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = produce.Id }, ToResponse(produce));
     }
 
+    [HttpPut("{id}")]
+    [Authorize]
+    public async Task<ActionResult<ProduceResponse>> Update(int id, CreateProduceRequest request)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var produce = await _db.Produce
+            .Include(p => p.FarmerProfile!.User)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (produce is null) return NotFound();
+        if (produce.FarmerProfile!.UserId != userId) return Forbid();
+
+        var images = request.Images?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new();
+        var lat = request.FarmLatitude ?? produce.FarmLatitude ?? produce.FarmerProfile.FarmLatitude;
+        var lng = request.FarmLongitude ?? produce.FarmLongitude ?? produce.FarmerProfile.FarmLongitude;
+
+        // Publishing (IsDraft false) enforces the same requirements as Create.
+        if (!request.IsDraft)
+        {
+            if (images.Count == 0 && string.IsNullOrWhiteSpace(produce.ImagePath) && string.IsNullOrWhiteSpace(request.ImagePath))
+                return BadRequest("At least one produce photo is required.");
+            if (request.PlantingDate is null && produce.PlantingDate is null)
+                return BadRequest("Planting date is required.");
+            if (request.ExpiryDate is null && produce.ExpiryDate is null)
+                return BadRequest("Best-before date is required.");
+            if (lat is null || lng is null)
+                return BadRequest("Farm location (GPS) is required.");
+        }
+
+        produce.Name = request.Name;
+        produce.Category = request.Category;
+        produce.Description = request.Description;
+        produce.Price = request.Price;
+        produce.Unit = request.Unit;
+        produce.QuantityAvailable = request.QuantityAvailable;
+        if (images.Count > 0)
+        {
+            produce.ImagePath = images[0];
+            produce.ImagesJson = System.Text.Json.JsonSerializer.Serialize(images);
+        }
+        if (request.PlantingDate is not null) produce.PlantingDate = request.PlantingDate;
+        produce.HarvestDate = request.HarvestDate ?? produce.HarvestDate;
+        if (request.ExpiryDate is not null) produce.ExpiryDate = request.ExpiryDate;
+        produce.AvailableFrom = request.AvailableFrom;
+        produce.FarmLatitude = lat;
+        produce.FarmLongitude = lng;
+        produce.IsExportReady = request.IsExportReady;
+        produce.GradeQuality = request.GradeQuality;
+        produce.IsDraft = request.IsDraft;
+        produce.DeliveryScope = NormalizeScope(request.DeliveryScope);
+
+        await _db.SaveChangesAsync();
+        return Ok(ToResponse(produce));
+    }
+
     [HttpDelete("{id}")]
-    [Authorize(Roles = nameof(UserRole.Farmer))]
+    [Authorize]
     public async Task<IActionResult> Delete(int id)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -178,5 +258,32 @@ public class ProduceController : ControllerBase
         _db.Produce.Remove(produce);
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    private static string NormalizeScope(string? scope) => scope switch
+    {
+        "Export" => "Export",
+        "Both" => "Both",
+        _ => "Local",
+    };
+
+    private async Task<FarmerProfile?> GetOrCreateSellerProfile(int userId)
+    {
+        var profile = await _db.FarmerProfiles.FirstOrDefaultAsync(f => f.UserId == userId);
+        if (profile is not null) return profile;
+
+        var user = await _db.Users.FindAsync(userId);
+        if (user is null) return null;
+
+        profile = new FarmerProfile
+        {
+            UserId = userId,
+            FarmName = $"{user.Name}'s Listings",
+            Phone = user.Phone,
+            ImagePath = user.ImagePath,
+        };
+        _db.FarmerProfiles.Add(profile);
+        await _db.SaveChangesAsync();
+        return profile;
     }
 }

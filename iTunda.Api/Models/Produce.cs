@@ -31,4 +31,10 @@ public class Produce
     public bool IsActive { get; set; } = true;
     public bool IsExportReady { get; set; }
     public string? GradeQuality { get; set; }
+
+    /// <summary>Unpublished listing — visible only to its owner until published.</summary>
+    public bool IsDraft { get; set; }
+
+    /// <summary>Where the seller can deliver: "Local", "Export" or "Both".</summary>
+    public string DeliveryScope { get; set; } = "Local";
 }
