@@ -165,6 +165,23 @@ export interface CommodityDto {
   listings: number;
 }
 
+export interface PricePoint {
+  date: string;
+  price: number;
+}
+
+export interface PriceHistory {
+  category: string;
+  unit: string;
+  range: string;
+  current: number;
+  avg: number;
+  low: number;
+  high: number;
+  changePct: number;
+  points: PricePoint[];
+}
+
 export type OrderSide = 'Buy' | 'Sell';
 export type OrderKind = 'Spot' | 'Limit' | 'Futures' | 'Put';
 

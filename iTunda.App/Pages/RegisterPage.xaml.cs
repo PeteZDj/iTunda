@@ -100,6 +100,29 @@ public class RegisterPage : ContentPage
         };
         registerBtn.Clicked += OnRegisterClicked;
 
+        var orRow = new Grid
+        {
+            ColumnDefinitions = { new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Star) },
+            ColumnSpacing = 10,
+        };
+        orRow.Add(new BoxView { HeightRequest = 1, Color = Color.FromArgb("#E0E8E3"), VerticalOptions = LayoutOptions.Center }, 0, 0);
+        orRow.Add(new Label { Text = "or", TextColor = Colors.Gray, FontSize = 12, HorizontalOptions = LayoutOptions.Center }, 1, 0);
+        orRow.Add(new BoxView { HeightRequest = 1, Color = Color.FromArgb("#E0E8E3"), VerticalOptions = LayoutOptions.Center }, 2, 0);
+
+        var googleBtn = new Button
+        {
+            Text = "Continue with Google",
+            BackgroundColor = Colors.White,
+            TextColor = Color.FromArgb("#1F1F1F"),
+            BorderColor = Color.FromArgb("#DADCE0"),
+            BorderWidth = 1,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 28,
+            HeightRequest = 52,
+            FontSize = 15
+        };
+        googleBtn.Clicked += OnGoogleClicked;
+
         var loginLink = new Label
         {
             FormattedText = new FormattedString
@@ -142,6 +165,8 @@ public class RegisterPage : ContentPage
                     _errorLabel,
                     new BoxView { HeightRequest = 4 },
                     registerBtn,
+                    orRow,
+                    googleBtn,
                     loginLink
                 }
             }
@@ -196,6 +221,27 @@ public class RegisterPage : ContentPage
             Application.Current!.Windows[0].Page = new AppShell(_api, _appState);
         }
         catch (Exception ex) { ShowError(ex.Message); }
+        finally
+        {
+            _spinner.IsVisible = false;
+            _spinner.IsRunning = false;
+        }
+    }
+
+    private async void OnGoogleClicked(object? sender, EventArgs e)
+    {
+        _errorLabel.IsVisible = false;
+        try
+        {
+            _spinner.IsVisible = true;
+            _spinner.IsRunning = true;
+            var auth = await GoogleSignIn.AuthenticateAsync();
+            if (auth is null) return; // user cancelled
+            _appState.SetSession(auth);
+            Application.Current!.Windows[0].Page = new AppShell(_api, _appState);
+        }
+        catch (TaskCanceledException) { /* dismissed */ }
+        catch (Exception ex) { ShowError("Google sign-in failed. " + ex.Message); }
         finally
         {
             _spinner.IsVisible = false;

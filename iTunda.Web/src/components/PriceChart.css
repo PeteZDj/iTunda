@@ -1,0 +1,5 @@
+.pchart { width: 100%; height: auto; display: block; }
+.pchart-axis { font-size: 11px; fill: #8a9a90; font-weight: 600; }
+.pchart-grid-label { font-size: 10px; fill: #b3c2b8; font-weight: 600; }
+.pchart-last { font-size: 12px; fill: #0a5226; font-weight: 800; }
+.pchart-empty { padding: 40px 0; text-align: center; color: #8a9a90; font-size: 14px; }

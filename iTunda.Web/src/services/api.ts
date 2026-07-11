@@ -4,7 +4,7 @@ import type {
   OrderResponse, CreateOrderRequest, CategoryStats,
   RegionDto, CommodityDto, BuyOrderResponse, CreateBuyOrderRequest,
   DeliveryEstimateRequest, DeliveryEstimateResponse,
-  CreateProduceRequest, MeResponse, UpdateMeRequest,
+  CreateProduceRequest, MeResponse, UpdateMeRequest, PriceHistory,
 } from '../types';
 
 // In production the SPA is served by IIS which proxies /api -> the local API
@@ -26,6 +26,10 @@ export const register = (data: { name: string; email: string; password: string; 
 
 export const login = (email: string, password: string) =>
   client.post<AuthResponse>('/auth/login', { email, password }).then(r => r.data);
+
+// Verify a Google ID token server-side and receive a real iTunda JWT.
+export const googleAuth = (credential: string) =>
+  client.post<AuthResponse>('/auth/google', { credential }).then(r => r.data);
 
 export const getMe = () =>
   client.get<MeResponse>('/auth/me').then(r => r.data);
@@ -95,6 +99,9 @@ export const getRegions = () =>
 
 export const getCommodities = () =>
   client.get<CommodityDto[]>('/commodities').then(r => r.data);
+
+export const getPriceHistory = (category: string, range: string) =>
+  client.get<PriceHistory>(`/commodities/${encodeURIComponent(category)}/history`, { params: { range } }).then(r => r.data);
 
 // Buy orders (commodity order book)
 export const getBuyOrders = (params?: { commodity?: string; zone?: number; country?: string; side?: string; kind?: string }) =>

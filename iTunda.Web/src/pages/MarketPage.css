@@ -11,6 +11,32 @@
 
 .mk-body { padding: 24px 24px 60px; }
 
+/* Price trends */
+.mk-trends { padding: 18px 20px; margin-bottom: 22px; }
+.mk-trends-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.mk-trends-title-wrap { display: flex; align-items: center; gap: 12px; }
+.mk-trends-emoji { font-size: 30px; }
+.mk-trends-title { margin: 0; font-size: 19px; color: var(--green-800, #0a5226); font-family: var(--font-head); }
+.mk-trends-sub { font-size: 13px; color: var(--muted, #6b7c72); }
+
+.mk-range-tabs { display: inline-flex; background: #eef4f0; border-radius: 999px; padding: 3px; }
+.mk-range-tabs button {
+  border: none; background: none; padding: 7px 16px; border-radius: 999px; font-weight: 800;
+  font-size: 13px; color: #6b7c72; cursor: pointer; transition: all .15s;
+}
+.mk-range-tabs button.active { background: #fff; color: var(--green-800, #0a5226); box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+
+.mk-trends-stats {
+  display: flex; flex-wrap: wrap; gap: 8px 26px; margin: 16px 0 6px;
+}
+.mk-trends-stats > div { display: flex; flex-direction: column; }
+.mk-ts-l { font-size: 11.5px; color: #8a9a90; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.mk-ts-v { font-size: 17px; font-weight: 800; color: #17271e; font-variant-numeric: tabular-nums; }
+.mk-ts-v.up { color: #0e7a3e; }
+.mk-ts-v.down { color: #c0392b; }
+
+.mk-trends-chart { margin-top: 6px; min-height: 120px; }
+
 /* Price board */
 .mk-board {
   display: grid;

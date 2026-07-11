@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -61,6 +62,62 @@ public class AuthController : ControllerBase
 
         var token = _tokenService.CreateToken(user);
         return Ok(new AuthResponse(token, user.Id, user.Name, user.Email, user.Role, user.ImagePath));
+    }
+
+    // Public Google client ID (the secret lives in the JS/auth-server; the API
+    // only needs the audience to validate the ID token).
+    private const string GoogleClientId = "355354020888-nmt0qlr55adgprvhaht50oamstv637qs.apps.googleusercontent.com";
+
+    // Verify a Google ID token (from the web GSI button or the mobile flow) and
+    // issue a real iTunda JWT, provisioning the user on first sign-in.
+    [HttpPost("google")]
+    public async Task<ActionResult<AuthResponse>> Google(GoogleAuthRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Credential))
+            return BadRequest("Google credential is required.");
+
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            payload = await GoogleJsonWebSignature.ValidateAsync(
+                request.Credential,
+                new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = new[] { GoogleClientId }
+                });
+        }
+        catch
+        {
+            return Unauthorized("Invalid Google sign-in token.");
+        }
+
+        var email = payload.Email;
+        if (string.IsNullOrWhiteSpace(email))
+            return Unauthorized("Google account has no email.");
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user is null)
+        {
+            user = new User
+            {
+                Name = string.IsNullOrWhiteSpace(payload.Name) ? email.Split('@')[0] : payload.Name,
+                Email = email,
+                Phone = string.Empty,
+                Role = UserRole.Buyer,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString("N")),
+                ImagePath = payload.Picture,
+            };
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync();
+        }
+        else if (string.IsNullOrEmpty(user.ImagePath) && !string.IsNullOrEmpty(payload.Picture))
+        {
+            user.ImagePath = payload.Picture;
+            await _db.SaveChangesAsync();
+        }
+
+        var jwt = _tokenService.CreateToken(user);
+        return Ok(new AuthResponse(jwt, user.Id, user.Name, user.Email, user.Role, user.ImagePath));
     }
 
     [HttpGet("me")]

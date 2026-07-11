@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Sign in to iTunda</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root { --green: #0a4a26; --accent: #16a34a; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 22px; padding: 28px;
+      font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(160deg, #0a4a26 0%, #0e7a3e 100%); color: #fff; text-align: center;
+    }
+    .leaf { font-size: 52px; }
+    h1 { font-size: 24px; margin: 0; font-weight: 800; }
+    p { margin: 0; opacity: .85; font-size: 14px; max-width: 320px; }
+    .card { background: #fff; border-radius: 16px; padding: 22px; width: 100%; max-width: 340px; }
+    #buttonWrap { display: flex; justify-content: center; min-height: 44px; }
+    .msg { color: #0a4a26; font-size: 14px; margin-top: 14px; min-height: 20px; }
+    .spinner { width: 26px; height: 26px; border: 3px solid #cbe6d6; border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .8s linear infinite; margin: 12px auto 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="leaf">&#127807;</div>
+  <h1>Sign in to iTunda</h1>
+  <p>Continue with your Google account to buy, sell and track produce.</p>
+  <div class="card">
+    <div id="buttonWrap"></div>
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <script>
+    var CLIENT_ID = '355354020888-nmt0qlr55adgprvhaht50oamstv637qs.apps.googleusercontent.com';
+    var msg = document.getElementById('msg');
+
+    function setMsg(t) { msg.textContent = t || ''; }
+
+    async function onCredential(response) {
+      try {
+        setMsg('Signing you in…');
+        document.getElementById('buttonWrap').innerHTML = '<div class="spinner"></div>';
+        var res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: response.credential })
+        });
+        if (!res.ok) throw new Error('auth failed');
+        var d = await res.json();
+        var p = new URLSearchParams();
+        p.set('token', d.token || '');
+        p.set('userId', String(d.userId || 0));
+        p.set('name', d.name || '');
+        p.set('email', d.email || '');
+        p.set('role', String(d.role != null ? d.role : 1));
+        p.set('image', d.imagePath || '');
+        // Hand the real iTunda JWT back to the app via its custom scheme.
+        window.location.href = 'itunda://auth#' + p.toString();
+      } catch (e) {
+        setMsg('Sign-in failed. Please try again.');
+        renderButton();
+      }
+    }
+
+    function renderButton() {
+      if (!window.google || !google.accounts || !google.accounts.id) {
+        setMsg('Loading Google…');
+        return setTimeout(renderButton, 400);
+      }
+      google.accounts.id.initialize({ client_id: CLIENT_ID, callback: onCredential, ux_mode: 'popup' });
+      document.getElementById('buttonWrap').innerHTML = '';
+      google.accounts.id.renderButton(document.getElementById('buttonWrap'),
+        { theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'pill', width: 280 });
+      google.accounts.id.prompt();
+    }
+
+    window.addEventListener('load', function () { setTimeout(renderButton, 300); });
+  </script>
+</body>
+</html>

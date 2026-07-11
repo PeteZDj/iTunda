@@ -255,6 +255,57 @@ public static class SeedData
         db.Produce.AddRange(sampleAds);
         await db.SaveChangesAsync();
 
+        // ── Guarantee every category has a healthy pool of live listings ────
+        // The random pass above is region-biased, so rare crops can be thin.
+        // Top each category up to a minimum spread of listings.
+        var coverage = new List<Produce>();
+        foreach (var cat in categories)
+        {
+            var have = listings.Count(l => l.Category == cat && !l.IsDraft)
+                     + sampleAds.Count(s => s.Category == cat && !s.IsDraft);
+            var target = rng.Next(9, 19); // ensure 9–18 live listings per crop
+            for (int k = have; k < target; k++)
+            {
+                var candidates = Enumerable.Range(0, profiles.Count)
+                    .Where(idx => RegionData.All[farmerDefs[idx].RegionIndex].Crops.Contains(cat))
+                    .ToList();
+                var fIdx = candidates.Count > 0 ? candidates[rng.Next(candidates.Count)] : rng.Next(profiles.Count);
+                var farmer = profiles[fIdx];
+                var det = catDetails[cat];
+
+                var harvestDaysAgo = rng.Next(0, 30);
+                var harvestDate = now.AddDays(-harvestDaysAgo);
+                var plantingDate = harvestDate.AddDays(-rng.Next(75, 320));
+                var expiryDays = cat == "Roses" ? rng.Next(7, 21) : rng.Next(14, 61);
+                var variety = det.varieties[rng.Next(det.varieties.Length)];
+                var grade = det.grades[rng.Next(det.grades.Length)];
+                var qty = Math.Round(det.minQ + rng.NextDouble() * (det.maxQ - det.minQ), 1);
+                var price = Math.Round(det.minP + (decimal)(rng.NextDouble() * (double)(det.maxP - det.minP)), 0);
+                var exportReady = farmer.AbleToExportDirectly && rng.Next(10) < 6;
+
+                coverage.Add(new Produce
+                {
+                    FarmerProfileId = farmer.Id,
+                    Name = variety,
+                    Category = cat,
+                    Description = BuildDescription(cat, variety, grade, qty, det.unit, farmer),
+                    Price = price,
+                    Unit = det.unit,
+                    QuantityAvailable = qty,
+                    PlantingDate = plantingDate,
+                    HarvestDate = harvestDate,
+                    ExpiryDate = harvestDate.AddDays(expiryDays),
+                    IsActive = true,
+                    IsExportReady = exportReady,
+                    GradeQuality = grade,
+                    DeliveryScope = exportReady ? (rng.Next(2) == 0 ? "Export" : "Both") : "Local",
+                    CreatedAt = now.AddDays(-rng.Next(0, 60)),
+                });
+            }
+        }
+        db.Produce.AddRange(coverage);
+        await db.SaveChangesAsync();
+
         // ── Commodity buy orders (bids) ─────────────────────────────────────
         var buyerNames = new[]
         {

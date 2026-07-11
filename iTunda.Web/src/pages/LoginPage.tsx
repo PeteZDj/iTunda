@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
-import { login } from '../services/api';
+import { login, googleAuth } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
 
@@ -20,14 +20,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('/gauth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: credentialResponse.credential }),
-      });
-      if (!res.ok) throw new Error('failed');
-      const data = await res.json();
-      setSession({ token: data.token, userId: 0, name: data.user.name, email: data.user.email, role: 'Buyer', imagePath: data.user.avatar });
+      const auth = await googleAuth(credentialResponse.credential);
+      setSession(auth);
       navigate(next);
     } catch {
       setError('Google sign-in failed. Please try again.');

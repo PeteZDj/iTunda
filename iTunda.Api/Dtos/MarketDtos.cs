@@ -23,6 +23,19 @@ public record CommodityDto(
     double ChangePct,
     int Listings);
 
+public record PricePointDto(DateTime Date, decimal Price);
+
+public record PriceHistoryDto(
+    string Category,
+    string Unit,
+    string Range,
+    decimal Current,
+    decimal Avg,
+    decimal Low,
+    decimal High,
+    double ChangePct,
+    List<PricePointDto> Points);
+
 public record BuyOrderResponse(
     int Id,
     string Commodity,

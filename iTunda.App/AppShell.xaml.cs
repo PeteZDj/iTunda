@@ -34,6 +34,12 @@ public class AppShell : Shell
             Items = { new ShellContent { Title = "Browse", Content = new BrowsePage(api, appState) } }
         });
 
+        tabBar.Items.Add(new Tab
+        {
+            Title = "Prices",
+            Items = { new ShellContent { Title = "Prices", Content = new PricesPage(api) } }
+        });
+
         if (appState.Role == UserRole.Farmer)
         {
             tabBar.Items.Add(new Tab

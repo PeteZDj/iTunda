@@ -9,7 +9,10 @@ public class ApiClient
     private readonly HttpClient _http;
     private readonly AppState _appState;
 
-    public const string BaseUrl = "http://localhost:5088/api";
+    // Live API behind IIS. `localhost` only works in the desktop debugger — on a
+    // real phone it points at the device itself, which caused "connection failure".
+    public const string BaseUrl = "https://itunda.org/api";
+    public const string Origin  = "https://itunda.org";
 
     public ApiClient(AppState appState)
     {
@@ -43,6 +46,20 @@ public class ApiClient
         var resp = await _http.GetAsync("categories");
         await EnsureSuccess(resp);
         return (await resp.Content.ReadFromJsonAsync<List<string>>()) ?? new();
+    }
+
+    public async Task<List<CommodityDto>> GetCommoditiesAsync()
+    {
+        var resp = await _http.GetAsync("commodities");
+        await EnsureSuccess(resp);
+        return (await resp.Content.ReadFromJsonAsync<List<CommodityDto>>()) ?? new();
+    }
+
+    public async Task<PriceHistory?> GetPriceHistoryAsync(string category, string range)
+    {
+        var resp = await _http.GetAsync($"commodities/{Uri.EscapeDataString(category)}/history?range={range}");
+        if (!resp.IsSuccessStatusCode) return null;
+        return await resp.Content.ReadFromJsonAsync<PriceHistory>();
     }
 
     public async Task<List<ProduceResponse>> GetProduceAsync(

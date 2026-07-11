@@ -6,6 +6,8 @@ public record RegisterRequest(string Name, string Email, string Password, string
 
 public record LoginRequest(string Email, string Password);
 
+public record GoogleAuthRequest(string Credential);
+
 public record AuthResponse(string Token, int UserId, string Name, string? Email, UserRole Role, string? ImagePath = null);
 
 public record MeResponse(

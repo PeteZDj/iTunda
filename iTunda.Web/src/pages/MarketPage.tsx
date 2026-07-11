@@ -1,12 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { getCommodities, getBuyOrders, getProduce } from '../services/api';
+import { getCommodities, getBuyOrders, getProduce, getPriceHistory } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { flagUrl } from '../lib/geo';
 import { categoryIcon } from '../lib/categories';
 import TradeTicket from '../components/TradeTicket';
-import type { CommodityDto, BuyOrderResponse, ProduceResponse } from '../types';
+import PriceChart from '../components/PriceChart';
+import type { CommodityDto, BuyOrderResponse, ProduceResponse, PriceHistory } from '../types';
 import './MarketPage.css';
+
+const RANGES: { id: string; label: string; long: string }[] = [
+  { id: '1W', label: '1W', long: '1-week' },
+  { id: '1M', label: '1M', long: '1-month' },
+  { id: '1Y', label: '1Y', long: '1-year' },
+];
 
 function timeAgo(iso: string) {
   const d = (Date.now() - new Date(iso).getTime()) / 86400000;
@@ -27,8 +34,20 @@ export default function MarketPage() {
   const [loading, setLoading] = useState(true);
   const [showTicket, setShowTicket] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [range, setRange] = useState('1M');
+  const [history, setHistory] = useState<PriceHistory | null>(null);
+  const [histLoading, setHistLoading] = useState(true);
 
   useEffect(() => { getCommodities().then(setCommodities).catch(() => {}); }, []);
+
+  // Price history for the selected commodity + timeframe.
+  useEffect(() => {
+    setHistLoading(true);
+    getPriceHistory(selected, range)
+      .then(setHistory)
+      .catch(() => setHistory(null))
+      .finally(() => setHistLoading(false));
+  }, [selected, range]);
 
   // Keep the URL in sync so the ticker / deep links preselect a commodity.
   const selectCommodity = (c: string) => { setSelected(c); setParams({ c }, { replace: true }); };
@@ -70,6 +89,45 @@ export default function MarketPage() {
       </div>
 
       <div className="page-container mk-body">
+        {/* Price trends + timeframe */}
+        <div className="mk-trends card">
+          <div className="mk-trends-head">
+            <div className="mk-trends-title-wrap">
+              <span className="mk-trends-emoji">{categoryIcon(selected)}</span>
+              <div>
+                <h2 className="mk-trends-title">{selected} price trend</h2>
+                <span className="mk-trends-sub">Average farm-gate price per {history?.unit ?? unit}</span>
+              </div>
+            </div>
+            <div className="mk-range-tabs">
+              {RANGES.map(r => (
+                <button key={r.id} className={range === r.id ? 'active' : ''} onClick={() => setRange(r.id)}>{r.label}</button>
+              ))}
+            </div>
+          </div>
+
+          {history && (
+            <div className="mk-trends-stats">
+              <div><span className="mk-ts-l">Current</span><span className="mk-ts-v">{format(history.current)}</span></div>
+              <div><span className="mk-ts-l">{RANGES.find(r => r.id === range)?.long} avg</span><span className="mk-ts-v">{format(history.avg)}</span></div>
+              <div><span className="mk-ts-l">Low</span><span className="mk-ts-v">{format(history.low)}</span></div>
+              <div><span className="mk-ts-l">High</span><span className="mk-ts-v">{format(history.high)}</span></div>
+              <div>
+                <span className="mk-ts-l">{RANGES.find(r => r.id === range)?.long} change</span>
+                <span className={`mk-ts-v ${history.changePct >= 0 ? 'up' : 'down'}`}>
+                  {history.changePct >= 0 ? '▲' : '▼'} {Math.abs(history.changePct).toFixed(2)}%
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="mk-trends-chart">
+            {histLoading ? <div className="spinner" /> : history
+              ? <PriceChart points={history.points} unit={history.unit} format={format} up={history.changePct >= 0} />
+              : <div className="pchart-empty">No price history for {selected}.</div>}
+          </div>
+        </div>
+
         {/* Commodity price board */}
         <div className="mk-board">
           {commodities.map(c => {
