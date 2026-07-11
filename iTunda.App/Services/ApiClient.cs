@@ -17,7 +17,8 @@ public class ApiClient
     public ApiClient(AppState appState)
     {
         _appState = appState;
-        _http = new HttpClient { BaseAddress = new Uri(BaseUrl + "/") };
+        // Fail fast instead of spinning forever if the network is unreachable.
+        _http = new HttpClient { BaseAddress = new Uri(BaseUrl + "/"), Timeout = TimeSpan.FromSeconds(25) };
     }
 
     private void ApplyAuthHeader()
@@ -64,7 +65,8 @@ public class ApiClient
 
     public async Task<List<ProduceResponse>> GetProduceAsync(
         string? q = null, string? category = null, string? county = null,
-        bool? exportReady = null, bool includeFuture = false)
+        bool? exportReady = null, bool includeFuture = false,
+        int? skip = null, int? limit = null)
     {
         var qs = new List<string>();
         if (!string.IsNullOrWhiteSpace(q)) qs.Add($"q={Uri.EscapeDataString(q)}");
@@ -72,6 +74,8 @@ public class ApiClient
         if (!string.IsNullOrWhiteSpace(county)) qs.Add($"county={Uri.EscapeDataString(county)}");
         if (exportReady.HasValue) qs.Add($"exportReady={exportReady.Value}");
         if (includeFuture) qs.Add("includeFuture=true");
+        if (skip.HasValue) qs.Add($"skip={skip.Value}");
+        if (limit.HasValue) qs.Add($"limit={limit.Value}");
         var url = "produce" + (qs.Count == 0 ? "" : "?" + string.Join("&", qs));
         var resp = await _http.GetAsync(url);
         await EnsureSuccess(resp);

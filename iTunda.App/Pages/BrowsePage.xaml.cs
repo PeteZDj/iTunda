@@ -22,7 +22,14 @@ public class BrowsePage : ContentPage
     private readonly VerticalStackLayout _listContainer;
     private readonly ActivityIndicator _spinner;
     private readonly Label _emptyLabel;
+    private readonly Button _loadMoreBtn;
     private string? _activeCategory;
+
+    // Paging keeps the phone from trying to render ~1,000 image cards at once,
+    // which froze the UI thread forever.
+    private const int PageSize = 24;
+    private int _loaded;
+    private bool _busy;
 
     public BrowsePage(ApiClient api, AppState appState)
     {
@@ -39,7 +46,7 @@ public class BrowsePage : ContentPage
             PlaceholderColor = Colors.Gray,
             HeightRequest = 46
         };
-        _searchEntry.Completed += async (_, _) => await LoadAsync();
+        _searchEntry.Completed += async (_, _) => await LoadAsync(reset: true);
 
         var searchBtn = new Button
         {
@@ -51,7 +58,7 @@ public class BrowsePage : ContentPage
             HeightRequest = 46,
             WidthRequest = 90
         };
-        searchBtn.Clicked += async (_, _) => await LoadAsync();
+        searchBtn.Clicked += async (_, _) => await LoadAsync(reset: true);
 
         var searchRow = new Grid
         {
@@ -93,7 +100,21 @@ public class BrowsePage : ContentPage
             IsVisible = false
         };
 
-        _listContainer = new VerticalStackLayout { Spacing = 0, Padding = new Thickness(16, 8, 16, 24) };
+        _listContainer = new VerticalStackLayout { Spacing = 0, Padding = new Thickness(16, 8, 16, 8) };
+
+        _loadMoreBtn = new Button
+        {
+            Text = "Load more",
+            BackgroundColor = Colors.White,
+            TextColor = Primary,
+            BorderColor = Accent,
+            BorderWidth = 1,
+            CornerRadius = 22,
+            HeightRequest = 46,
+            Margin = new Thickness(16, 0, 16, 28),
+            IsVisible = false
+        };
+        _loadMoreBtn.Clicked += async (_, _) => await LoadAsync(reset: false);
 
         var header = new Grid
         {
@@ -115,7 +136,7 @@ public class BrowsePage : ContentPage
         {
             Content = new VerticalStackLayout
             {
-                Children = { header, searchRow, categoryScroll, _spinner, _emptyLabel, _listContainer }
+                Children = { header, searchRow, categoryScroll, _spinner, _emptyLabel, _listContainer, _loadMoreBtn }
             }
         };
     }
@@ -123,7 +144,9 @@ public class BrowsePage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await LoadAsync();
+        // Only load on first appearance so switching tabs stays instant.
+        if (_listContainer.Children.Count == 0)
+            await LoadAsync(reset: true);
     }
 
     private void BuildCategoryChips()
@@ -156,42 +179,67 @@ public class BrowsePage : ContentPage
         {
             _activeCategory = label == "All" ? null : label;
             BuildCategoryChips();
-            await LoadAsync();
+            await LoadAsync(reset: true);
         };
         frame.GestureRecognizers.Add(tap);
         return frame;
     }
 
-    private async Task LoadAsync()
+    private async Task LoadAsync(bool reset)
     {
-        _spinner.IsVisible = true;
-        _spinner.IsRunning = true;
-        _emptyLabel.IsVisible = false;
-        _listContainer.Children.Clear();
+        if (_busy) return;
+        _busy = true;
+
+        if (reset)
+        {
+            _loaded = 0;
+            _listContainer.Children.Clear();
+            _emptyLabel.IsVisible = false;
+            _loadMoreBtn.IsVisible = false;
+            _spinner.IsVisible = true;
+            _spinner.IsRunning = true;
+        }
+        else
+        {
+            _loadMoreBtn.Text = "Loading…";
+            _loadMoreBtn.IsEnabled = false;
+        }
 
         try
         {
-            var items = await _api.GetProduceAsync(q: _searchEntry.Text?.Trim(), category: _activeCategory);
-            if (items.Count == 0)
+            var items = await _api.GetProduceAsync(
+                q: _searchEntry.Text?.Trim(), category: _activeCategory,
+                skip: _loaded, limit: PageSize);
+
+            foreach (var item in items)
+                _listContainer.Children.Add(ProduceCard(item));
+
+            _loaded += items.Count;
+
+            if (reset && _loaded == 0)
             {
                 _emptyLabel.Text = "No produce found.";
                 _emptyLabel.IsVisible = true;
             }
-            else
-            {
-                foreach (var item in items)
-                    _listContainer.Children.Add(ProduceCard(item));
-            }
+
+            // A full page probably means there is more to fetch.
+            _loadMoreBtn.IsVisible = items.Count == PageSize;
         }
         catch (Exception ex)
         {
-            _emptyLabel.Text = $"Error: {ex.Message}";
-            _emptyLabel.IsVisible = true;
+            var msg = ex is HttpRequestException or TaskCanceledException
+                ? "Can't reach iTunda. Check your connection and try again."
+                : $"Error: {ex.Message}";
+            if (_loaded == 0) { _emptyLabel.Text = msg; _emptyLabel.IsVisible = true; }
+            else await DisplayAlert("Couldn't load more", msg, "OK");
         }
         finally
         {
             _spinner.IsVisible = false;
             _spinner.IsRunning = false;
+            _loadMoreBtn.Text = "Load more";
+            _loadMoreBtn.IsEnabled = true;
+            _busy = false;
         }
     }
 

@@ -61,7 +61,9 @@ public class ProduceController : ControllerBase
         [FromQuery] string? country,
         [FromQuery] int? zone,
         [FromQuery] bool? exportReady,
-        [FromQuery] bool includeFuture = false)
+        [FromQuery] bool includeFuture = false,
+        [FromQuery] int? skip = null,
+        [FromQuery] int? limit = null)
     {
         var query = _db.Produce
             .Include(p => p.FarmerProfile!.User)
@@ -98,7 +100,11 @@ public class ProduceController : ControllerBase
         if (exportReady.HasValue)
             query = query.Where(p => p.IsExportReady == exportReady.Value);
 
-        var items = await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
+        IQueryable<Produce> ordered = query.OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id);
+        if (skip is > 0) ordered = ordered.Skip(skip.Value);
+        if (limit is > 0) ordered = ordered.Take(limit.Value);
+
+        var items = await ordered.ToListAsync();
         return Ok(items.Select(ToResponse));
     }
 

@@ -31,24 +31,28 @@ public class AppShell : Shell
         tabBar.Items.Add(new Tab
         {
             Title = "Browse",
+            Icon = "tab_browse.png",
             Items = { new ShellContent { Title = "Browse", Content = new BrowsePage(api, appState) } }
         });
 
         tabBar.Items.Add(new Tab
         {
             Title = "Prices",
+            Icon = "tab_prices.png",
             Items = { new ShellContent { Title = "Prices", Content = new PricesPage(api) } }
         });
 
         tabBar.Items.Add(new Tab
         {
             Title = "Farms",
+            Icon = "tab_farms.png",
             Items = { new ShellContent { Title = "Farms", Content = new FarmersPage(api, appState) } }
         });
 
         tabBar.Items.Add(new Tab
         {
             Title = "Delivery",
+            Icon = "tab_delivery.png",
             Items = { new ShellContent { Title = "Delivery", Content = new DeliveryPage() } }
         });
 
@@ -57,6 +61,7 @@ public class AppShell : Shell
             tabBar.Items.Add(new Tab
             {
                 Title = "Post",
+                Icon = "tab_post.png",
                 Items = { new ShellContent { Title = "Post Produce", Content = new MyListingsPage(api, appState) } }
             });
         }
@@ -64,12 +69,14 @@ public class AppShell : Shell
         tabBar.Items.Add(new Tab
         {
             Title = "Orders",
+            Icon = "tab_orders.png",
             Items = { new ShellContent { Title = "Orders", Content = new OrdersPage(api, appState) } }
         });
 
         tabBar.Items.Add(new Tab
         {
             Title = "Account",
+            Icon = "tab_account.png",
             Items = { new ShellContent { Title = "Account", Content = new AccountPage(appState, api) } }
         });
 
