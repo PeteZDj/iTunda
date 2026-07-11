@@ -5,9 +5,10 @@ param([switch]$Install)
 
 Import-Module C:\inetpub\repos\_lib\deploy.psm1 -Force
 Invoke-StaticDeploy `
-  -RepoDir     $PSScriptRoot `
-  -WorkingDir  'iTunda.Web' `
-  -BuildDir    'dist' `
-  -LiveDirs    @('C:\inetpub\wwwroot\itunda.org') `
-  -SmokeHosts  @('itunda.org') `
+  -RepoDir      $PSScriptRoot `
+  -WorkingDir   'iTunda.Web' `
+  -BuildDir     'dist' `
+  -LiveDirs     @('C:\inetpub\wwwroot\itunda.org') `
+  -PreserveDirs @('dl') `
+  -SmokeHosts   @('itunda.org') `
   -Install:$Install

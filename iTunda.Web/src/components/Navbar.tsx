@@ -34,14 +34,12 @@ export default function Navbar() {
           <Link to="/market" className={active('/market')} onClick={() => setMenuOpen(false)}>Market</Link>
           <Link to="/delivery" className={active('/delivery')} onClick={() => setMenuOpen(false)}>Delivery</Link>
           <Link to="/farmers" className={active('/farmers')} onClick={() => setMenuOpen(false)}>Farmers</Link>
-          <Link to="/downloads" className={active('/downloads')} onClick={() => setMenuOpen(false)}>
-            <span className="nav-dl">⬇ Get the App</span>
-          </Link>
+          <Link to="/downloads" className="nav-dl" onClick={() => setMenuOpen(false)}>⬇ Get the App</Link>
 
           <RegionSelector />
 
-          <Link to={sellHref} className="btn btn-sell btn-sm" onClick={() => setMenuOpen(false)}>＋ Sell</Link>
-          <Link to="/market" className="btn btn-buy btn-sm" onClick={() => setMenuOpen(false)}>⇅ Trade</Link>
+          <Link to={sellHref} className="nav-cta nav-cta-ghost" onClick={() => setMenuOpen(false)}>＋ Sell</Link>
+          <Link to="/market" className="nav-cta nav-cta-trade" onClick={() => setMenuOpen(false)}>⇅ Trade</Link>
 
           {isLoggedIn ? (
             <>
@@ -65,8 +63,8 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/login" className="btn btn-outline btn-sm" onClick={() => setMenuOpen(false)}>Sign In</Link>
-              <Link to="/register" className="btn btn-amber btn-sm" onClick={() => setMenuOpen(false)}>Join Free</Link>
+              <Link to="/login" className="nav-cta nav-cta-ghost" onClick={() => setMenuOpen(false)}>Sign In</Link>
+              <Link to="/register" className="nav-cta nav-cta-gold" onClick={() => setMenuOpen(false)}>Join Free</Link>
             </>
           )}
         </div>

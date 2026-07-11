@@ -21,7 +21,9 @@ public record CommodityDto(
     decimal Low,
     decimal High,
     double ChangePct,
-    int Listings);
+    int Listings,
+    decimal Bid,
+    decimal Ask);
 
 public record PricePointDto(DateTime Date, decimal Price);
 

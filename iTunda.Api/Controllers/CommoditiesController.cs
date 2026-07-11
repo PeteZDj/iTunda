@@ -37,15 +37,23 @@ public class CommoditiesController : ControllerBase
 
         var result = rows
             .GroupBy(r => r.Category)
-            .Select(cat => new CommodityDto(
-                cat.Key,
-                cat.GroupBy(x => x.Unit).OrderByDescending(g => g.Count()).First().Key,
-                Media.IconUrl(cat.Key),
-                Math.Round(cat.Average(x => x.Price), 0),
-                cat.Min(x => x.Price),
-                cat.Max(x => x.Price),
-                DailyChange(cat.Key),
-                cat.Count()))
+            .Select(cat =>
+            {
+                var avg = Math.Round(cat.Average(x => x.Price), 0);
+                // Dealing spread ~0.35% around the mid, like an FX/commodity desk.
+                var spread = Math.Max(Math.Round(avg * 0.0035m, 2), 0.02m);
+                return new CommodityDto(
+                    cat.Key,
+                    cat.GroupBy(x => x.Unit).OrderByDescending(g => g.Count()).First().Key,
+                    Media.IconUrl(cat.Key),
+                    avg,
+                    cat.Min(x => x.Price),
+                    cat.Max(x => x.Price),
+                    DailyChange(cat.Key),
+                    cat.Count(),
+                    Math.Round(avg - spread / 2, 2),
+                    Math.Round(avg + spread / 2, 2));
+            })
             .OrderBy(c => c.Category)
             .ToList();
 

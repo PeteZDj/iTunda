@@ -1,266 +1,431 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getCommodities, getBuyOrders, getProduce, getPriceHistory } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { flagUrl } from '../lib/geo';
 import { categoryIcon } from '../lib/categories';
 import TradeTicket from '../components/TradeTicket';
-import PriceChart from '../components/PriceChart';
+import TradeChart from '../components/TradeChart';
+import { useTradingEngine } from '../hooks/useTradingEngine';
+import { LEVERAGE, sparkFor, closePriceOf, livePl } from '../lib/trading';
+import type { Position } from '../lib/trading';
 import type { CommodityDto, BuyOrderResponse, ProduceResponse, PriceHistory } from '../types';
 import './MarketPage.css';
 
-const RANGES: { id: string; label: string; long: string }[] = [
-  { id: '1W', label: '1W', long: '1-week' },
-  { id: '1M', label: '1M', long: '1-month' },
-  { id: '1Y', label: '1Y', long: '1-year' },
+const RANGES = [
+  { id: '1W', label: '1W' },
+  { id: '1M', label: '1M' },
+  { id: '1Y', label: '1Y' },
 ];
-
-function timeAgo(iso: string) {
-  const d = (Date.now() - new Date(iso).getTime()) / 86400000;
-  if (d < 1) return 'today';
-  if (d < 2) return 'yesterday';
-  return `${Math.floor(d)}d ago`;
-}
 
 const KIND_LABEL: Record<string, string> = { Spot: 'SPOT', Limit: 'LIMIT', Futures: 'FUT', Put: 'PUT' };
 
+function Spark({ series, up }: { series: number[]; up: boolean }) {
+  const min = Math.min(...series), max = Math.max(...series);
+  const span = max - min || 1;
+  const w = 100, h = 30;
+  const pts = series.map((v, i) => `${(i / (series.length - 1)) * w},${h - ((v - min) / span) * h}`).join(' ');
+  return (
+    <svg className="spk" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+      <polyline points={pts} fill="none" stroke={up ? '#1fae74' : '#e5484d'} strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
 export default function MarketPage() {
   const [params, setParams] = useSearchParams();
-  const { format } = useCurrency();
+  const { format, convert, symbol, rates, currency } = useCurrency();
+  const rate = rates[currency] ?? 1;
+
   const [commodities, setCommodities] = useState<CommodityDto[]>([]);
   const [selected, setSelected] = useState<string>(params.get('c') || 'Avocados');
-  const [offers, setOffers] = useState<ProduceResponse[]>([]);
-  const [orders, setOrders] = useState<BuyOrderResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showTicket, setShowTicket] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
   const [range, setRange] = useState('1M');
   const [history, setHistory] = useState<PriceHistory | null>(null);
   const [histLoading, setHistLoading] = useState(true);
+  const [view, setView] = useState<'chart' | 'grid'>('chart');
 
+  const [offers, setOffers] = useState<ProduceResponse[]>([]);
+  const [orders, setOrders] = useState<BuyOrderResponse[]>([]);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const engine = useTradingEngine(commodities);
+
+  // ── formatters ──────────────────────────────────────────────────────────
+  const px = useCallback((kes: number) => {
+    const v = convert(kes);
+    const d = Math.abs(v) >= 1 ? 2 : 4;
+    return symbol + v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }, [convert, symbol]);
+  const numCcy = useCallback((kes: number) => {
+    const v = convert(kes);
+    const d = Math.abs(v) >= 1 ? 2 : 4;
+    return v.toFixed(d);
+  }, [convert]);
+  const money = useCallback((kes: number) => (kes < 0 ? '-' : '') + format(Math.abs(kes)), [format]);
+
+  // ── data loads ──────────────────────────────────────────────────────────
   useEffect(() => { getCommodities().then(setCommodities).catch(() => {}); }, []);
 
-  // Price history for the selected commodity + timeframe.
   useEffect(() => {
     setHistLoading(true);
-    getPriceHistory(selected, range)
-      .then(setHistory)
-      .catch(() => setHistory(null))
-      .finally(() => setHistLoading(false));
+    getPriceHistory(selected, range).then(setHistory).catch(() => setHistory(null)).finally(() => setHistLoading(false));
   }, [selected, range]);
 
-  // Keep the URL in sync so the ticker / deep links preselect a commodity.
-  const selectCommodity = (c: string) => { setSelected(c); setParams({ c }, { replace: true }); };
-
   useEffect(() => {
-    const c = params.get('c');
-    if (c && c !== selected) setSelected(c);
-  }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      getProduce({ category: selected }),
-      getBuyOrders({ commodity: selected }),
-    ]).then(([p, b]) => {
-      setOffers([...p].sort((a, z) => a.price - z.price).slice(0, 16));
-      setOrders(b);
-    }).catch(() => {}).finally(() => setLoading(false));
+    Promise.all([getProduce({ category: selected }), getBuyOrders({ commodity: selected })])
+      .then(([p, b]) => { setOffers([...p].sort((a, z) => a.price - z.price).slice(0, 14)); setOrders(b); })
+      .catch(() => {});
   }, [selected, reloadKey]);
 
-  const active = useMemo(() => commodities.find(c => c.category === selected), [commodities, selected]);
+  useEffect(() => { const c = params.get('c'); if (c && c !== selected) setSelected(c); }, [params]); // eslint-disable-line
 
-  // Split order book: sell-side (asks) vs buy-side (bids).
+  const selectCommodity = (c: string) => { setSelected(c); setParams({ c }, { replace: true }); };
+
+  // ── selected symbol quote ────────────────────────────────────────────────
+  const cReq = useMemo(() => commodities.find(c => c.category === selected), [commodities, selected]);
+  const q = engine.quotes[selected];
+  const unit = cReq?.unit ?? offers[0]?.unit ?? 'kg';
+  const bidKes = q?.bid ?? cReq?.bid ?? cReq?.avgPrice ?? 0;
+  const askKes = q?.ask ?? cReq?.ask ?? cReq?.avgPrice ?? 0;
+  const midKes = q?.price ?? cReq?.avgPrice ?? 0;
+  const chg = q?.changePct ?? cReq?.changePct ?? 0;
+
+  // ── order ticket ──────────────────────────────────────────────────────────
+  const [side, setSide] = useState<'Buy' | 'Sell'>('Buy');
+  const [vol, setVol] = useState('100');
+  const [sl, setSl] = useState('');
+  const [tp, setTp] = useState('');
+  const [tErr, setTErr] = useState('');
+  const [showAdv, setShowAdv] = useState(false);
+
+  const volNum = parseFloat(vol) || 0;
+  const entryKes = side === 'Buy' ? askKes : bidKes;
+  const marginKes = (entryKes * volNum) / LEVERAGE;
+  const slKes = sl.trim() ? parseFloat(sl) / rate : null;
+  const tpKes = tp.trim() ? parseFloat(tp) / rate : null;
+  const plAt = (price: number) => (side === 'Buy' ? price - entryKes : entryKes - price) * volNum;
+
+  const setSlPct = (pct: number) => setSl(numCcy(side === 'Buy' ? entryKes * (1 - pct / 100) : entryKes * (1 + pct / 100)));
+  const setTpPct = (pct: number) => setTp(numCcy(side === 'Buy' ? entryKes * (1 + pct / 100) : entryKes * (1 - pct / 100)));
+
+  const trade = (s: 'Buy' | 'Sell') => {
+    setSide(s);
+    setTErr('');
+    const slK = sl.trim() ? parseFloat(sl) / rate : null;
+    const tpK = tp.trim() ? parseFloat(tp) / rate : null;
+    const err = engine.open(selected, s, volNum, slK != null && isFinite(slK) ? slK : null, tpK != null && isFinite(tpK) ? tpK : null);
+    if (err) setTErr(err);
+    else { setSl(''); setTp(''); }
+  };
+
+  // ── positions inline edit ────────────────────────────────────────────────
+  const [editId, setEditId] = useState<string | null>(null);
+  const [eSl, setESl] = useState('');
+  const [eTp, setETp] = useState('');
+  const startEdit = (p: Position) => { setEditId(p.id); setESl(p.sl != null ? numCcy(p.sl) : ''); setETp(p.tp != null ? numCcy(p.tp) : ''); };
+  const saveEdit = () => {
+    if (!editId) return;
+    engine.modify(editId, eSl.trim() ? parseFloat(eSl) / rate : null, eTp.trim() ? parseFloat(eTp) / rate : null);
+    setEditId(null);
+  };
+
+  const [tab, setTab] = useState<'positions' | 'history' | 'journal'>('positions');
+  const acct = engine.account;
+
   const sellOrders = orders.filter(o => o.side === 'Sell').sort((a, z) => a.targetPrice - z.targetPrice);
   const bids = orders.filter(o => o.side === 'Buy').sort((a, z) => z.targetPrice - a.targetPrice);
-  const unit = active?.unit ?? offers[0]?.unit ?? 'kg';
 
   return (
-    <div className="market-page">
-      {/* Hero */}
-      <div className="mk-hero">
-        <div className="page-container">
-          <h1 className="mk-title">Commodity Exchange</h1>
-          <p className="mk-sub">
-            Live farm-gate offers, buyer bids, futures and options across 26 growing regions and 4 export zones.
-            Trade fresh produce like a commodity desk — spot, limit, forward and puts.
-          </p>
+    <div className="term">
+      {/* Toolbar */}
+      <div className="term-toolbar">
+        <div className="tt-symbol">
+          <span className="tt-ico">{categoryIcon(selected)}</span>
+          <div>
+            <div className="tt-name">{selected}<span className="tt-unit">·CFD /{unit}</span></div>
+            <div className="tt-sub">iTunda Commodity Exchange · demo trading</div>
+          </div>
+        </div>
+
+        <div className="tt-quote">
+          <div className="tt-px bid"><span>BID</span><b>{px(bidKes)}</b></div>
+          <div className="tt-spread"><span>SPREAD</span><b>{(convert(askKes - bidKes)).toFixed(2)}</b></div>
+          <div className="tt-px ask"><span>ASK</span><b>{px(askKes)}</b></div>
+          <div className={`tt-chg ${chg >= 0 ? 'up' : 'down'}`}>{chg >= 0 ? '▲' : '▼'} {Math.abs(chg).toFixed(2)}%</div>
+        </div>
+
+        <div className="tt-tools">
+          <div className="seg">
+            {RANGES.map(r => <button key={r.id} className={range === r.id ? 'active' : ''} onClick={() => setRange(r.id)}>{r.label}</button>)}
+          </div>
+          <div className="seg">
+            <button className={view === 'chart' ? 'active' : ''} onClick={() => setView('chart')}>◫ Chart</button>
+            <button className={view === 'grid' ? 'active' : ''} onClick={() => setView('grid')}>▦ Grid</button>
+          </div>
+          <button className="term-btn" onClick={engine.requestNotify} title="Desktop alerts for SL/TP hits">
+            {engine.notifyOn ? '🔔 Alerts on' : '🔕 Alerts'}
+          </button>
         </div>
       </div>
 
-      <div className="page-container mk-body">
-        {/* Price trends + timeframe */}
-        <div className="mk-trends card">
-          <div className="mk-trends-head">
-            <div className="mk-trends-title-wrap">
-              <span className="mk-trends-emoji">{categoryIcon(selected)}</span>
-              <div>
-                <h2 className="mk-trends-title">{selected} price trend</h2>
-                <span className="mk-trends-sub">Average farm-gate price per {history?.unit ?? unit}</span>
-              </div>
-            </div>
-            <div className="mk-range-tabs">
-              {RANGES.map(r => (
-                <button key={r.id} className={range === r.id ? 'active' : ''} onClick={() => setRange(r.id)}>{r.label}</button>
-              ))}
-            </div>
+      {/* Main 3-column workspace */}
+      <div className="term-main">
+        {/* Market Watch */}
+        <aside className="term-watch">
+          <div className="panel-title">Market Watch</div>
+          <div className="tw-head"><span>Symbol</span><span>Bid</span><span>Ask</span></div>
+          <div className="tw-list">
+            {commodities.map(c => {
+              const wq = engine.quotes[c.category];
+              const b = wq?.bid ?? c.bid, a = wq?.ask ?? c.ask;
+              const dir = wq ? (wq.price >= wq.prevPrice ? 'up' : 'down') : '';
+              return (
+                <button key={c.category} className={`tw-row ${selected === c.category ? 'active' : ''}`} onClick={() => selectCommodity(c.category)}>
+                  <span className="tw-sym"><img src={c.iconUrl} alt="" />{c.category}</span>
+                  <span className={`tw-bid ${dir}`}>{px(b)}</span>
+                  <span className={`tw-ask ${dir}`}>{px(a)}</span>
+                </button>
+              );
+            })}
           </div>
+        </aside>
 
-          {history && (
-            <div className="mk-trends-stats">
-              <div><span className="mk-ts-l">Current</span><span className="mk-ts-v">{format(history.current)}</span></div>
-              <div><span className="mk-ts-l">{RANGES.find(r => r.id === range)?.long} avg</span><span className="mk-ts-v">{format(history.avg)}</span></div>
-              <div><span className="mk-ts-l">Low</span><span className="mk-ts-v">{format(history.low)}</span></div>
-              <div><span className="mk-ts-l">High</span><span className="mk-ts-v">{format(history.high)}</span></div>
-              <div>
-                <span className="mk-ts-l">{RANGES.find(r => r.id === range)?.long} change</span>
-                <span className={`mk-ts-v ${history.changePct >= 0 ? 'up' : 'down'}`}>
-                  {history.changePct >= 0 ? '▲' : '▼'} {Math.abs(history.changePct).toFixed(2)}%
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div className="mk-trends-chart">
-            {histLoading ? <div className="spinner" /> : history
-              ? <PriceChart points={history.points} unit={history.unit} format={format} up={history.changePct >= 0} />
-              : <div className="pchart-empty">No price history for {selected}.</div>}
-          </div>
-        </div>
-
-        {/* Commodity price board */}
-        <div className="mk-board">
-          {commodities.map(c => {
-            const up = c.changePct >= 0;
-            return (
-              <button
-                key={c.category}
-                className={`mk-quote ${selected === c.category ? 'active' : ''}`}
-                onClick={() => selectCommodity(c.category)}
-              >
-                <div className="mk-quote-head">
-                  <img className="mk-quote-icon" src={c.iconUrl} alt="" />
-                  <span className="mk-quote-name">{c.category}</span>
-                </div>
-                <div className="mk-quote-price">{format(c.avgPrice)}<span>/{c.unit}</span></div>
-                <div className={`mk-quote-change ${up ? 'up' : 'down'}`}>
-                  {up ? '▲' : '▼'} {Math.abs(c.changePct).toFixed(2)}%
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Selected commodity summary */}
-        {active && (
-          <div className="mk-summary">
-            <div className="mk-summary-main">
-              <span className="mk-summary-emoji">{categoryIcon(active.category)}</span>
-              <div>
-                <h2>{active.category}</h2>
-                <span className="mk-summary-listings">{active.listings.toLocaleString()} offers · {bids.length} bids · {sellOrders.length} sell orders</span>
-              </div>
-            </div>
-            <div className="mk-summary-stats">
-              <div><span className="mk-stat-l">Avg</span><span className="mk-stat-v">{format(active.avgPrice)}</span></div>
-              <div><span className="mk-stat-l">Low</span><span className="mk-stat-v">{format(active.low)}</span></div>
-              <div><span className="mk-stat-l">High</span><span className="mk-stat-v">{format(active.high)}</span></div>
-              <div><span className="mk-stat-l">Unit</span><span className="mk-stat-v">{active.unit}</span></div>
-            </div>
-            <div className="mk-summary-actions">
-              <button className="btn btn-buy btn-sm" onClick={() => setShowTicket(true)}>BUY</button>
-              <button className="btn btn-sell btn-sm" onClick={() => setShowTicket(true)}>SELL</button>
-            </div>
-          </div>
-        )}
-
-        {/* Trade ticket */}
-        {showTicket && active && (
-          <div className="mk-ticket-wrap">
-            <div className="mk-ticket-close">
-              <button className="btn btn-outline btn-sm" onClick={() => setShowTicket(false)}>✕ Close ticket</button>
-            </div>
-            <TradeTicket
-              ctx={{ commodity: selected, unit, referencePriceKes: active.avgPrice }}
-              onPlaced={() => setReloadKey(k => k + 1)}
-            />
-          </div>
-        )}
-
-        {/* Order book */}
-        <div className="mk-orderbook">
-          {/* Offers / asks */}
-          <div className="mk-col mk-asks">
-            <div className="mk-col-head">
-              <span className="mk-col-title">Offers · Sell side</span>
-              <span className="mk-col-sub">best price first</span>
-            </div>
-            {loading ? <div className="spinner" /> : (offers.length === 0 && sellOrders.length === 0) ? (
-              <div className="mk-empty">No offers for {selected} right now.</div>
+        {/* Center: chart + order book */}
+        <main className="term-center">
+          <div className="term-chart panel">
+            {view === 'chart' ? (
+              histLoading ? <div className="term-loading">Loading chart…</div>
+                : history ? <TradeChart points={history.points} symbol={selected} livePrice={midKes} px={px} height={360} />
+                  : <div className="tc-empty">No chart data for {selected}.</div>
             ) : (
-              <>
-                {offers.map(o => (
-                  <Link to={`/produce/${o.id}`} key={`p${o.id}`} className="mk-row mk-row-ask">
-                    <img className="pc-flag" src={flagUrl(o.countryCode)} alt="" />
-                    <div className="mk-row-main">
-                      <span className="mk-row-name">{o.name}</span>
-                      <span className="mk-row-meta">{o.region}, {o.country} · {o.quantityAvailable.toLocaleString()} {o.unit}</span>
-                    </div>
-                    <div className="mk-row-price ask">{format(o.price)}<span>/{o.unit}</span>
-                      <span className="mk-buy-tag">BUY</span>
-                    </div>
-                  </Link>
-                ))}
-                {sellOrders.map(o => (
-                  <div key={`s${o.id}`} className={`mk-row mk-row-ask ${o.status !== 'Open' ? 'filled' : ''}`}>
-                    <img className="pc-flag" src={flagUrl(o.countryCode)} alt="" />
-                    <div className="mk-row-main">
-                      <span className="mk-row-name">{o.buyerName} <span className={`mk-kind ${o.kind.toLowerCase()}`}>{KIND_LABEL[o.kind]}</span></span>
-                      <span className="mk-row-meta">
-                        {o.quantity.toLocaleString()} {o.unit}{o.region ? ` · ${o.region}` : ''}
-                        {o.contractDate ? ` · ${new Date(o.contractDate).toLocaleDateString('en-KE', { month: 'short', year: '2-digit' })}` : ` · ${timeAgo(o.createdAt)}`}
-                      </span>
-                    </div>
-                    <div className="mk-row-price ask">{format(o.targetPrice)}<span>/{o.unit}</span></div>
-                  </div>
-                ))}
-              </>
+              <div className="term-grid-charts">
+                {commodities.map(c => {
+                  const wq = engine.quotes[c.category];
+                  const base = wq?.base ?? c.avgPrice;
+                  const up = (wq?.changePct ?? c.changePct) >= 0;
+                  return (
+                    <button key={c.category} className={`gc-card ${selected === c.category ? 'active' : ''}`} onClick={() => selectCommodity(c.category)}>
+                      <div className="gc-top"><img src={c.iconUrl} alt="" /><span>{c.category}</span></div>
+                      <Spark series={sparkFor(c.category, base, wq?.changePct ?? c.changePct)} up={up} />
+                      <div className="gc-bot"><b>{px(wq?.price ?? c.avgPrice)}</b><span className={up ? 'up' : 'down'}>{up ? '▲' : '▼'}{Math.abs(wq?.changePct ?? c.changePct).toFixed(2)}%</span></div>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          {/* Bids */}
-          <div className="mk-col mk-bids">
-            <div className="mk-col-head">
-              <span className="mk-col-title">Bids · Buy side</span>
-              <span className="mk-col-sub">highest bid first</span>
-            </div>
-            {loading ? <div className="spinner" /> : bids.length === 0 ? (
-              <div className="mk-empty">No open buy orders. Be the first to post one.</div>
-            ) : bids.map(b => (
-              <div key={b.id} className={`mk-row mk-row-bid ${b.status !== 'Open' ? 'filled' : ''}`}>
-                <img className="pc-flag" src={flagUrl(b.countryCode)} alt="" />
-                <div className="mk-row-main">
-                  <span className="mk-row-name">{b.buyerName} <span className={`mk-kind ${b.kind.toLowerCase()}`}>{KIND_LABEL[b.kind]}</span></span>
-                  <span className="mk-row-meta">
-                    {b.quantity.toLocaleString()} {b.unit}{b.variety ? ` · ${b.variety}` : ''}
-                    {b.region ? ` · ${b.region}` : ''}
-                    {b.contractDate ? ` · ${new Date(b.contractDate).toLocaleDateString('en-KE', { month: 'short', year: '2-digit' })}` : ` · ${timeAgo(b.createdAt)}`}
-                    {b.exportRequired ? ' · ✈ export' : ''}
-                  </span>
-                </div>
-                <div className="mk-row-price bid">
-                  {format(b.targetPrice)}<span>/{b.unit}</span>
-                  <span className={`mk-status ${b.status.toLowerCase()}`}>{b.status}</span>
-                </div>
+          <div className="term-book panel">
+            <div className="tb-col">
+              <div className="tb-head"><span className="tb-title ask">Offers · ask depth</span><span className="tb-sub">{offers.length + sellOrders.length}</span></div>
+              <div className="tb-rows">
+                {offers.map(o => (
+                  <Link to={`/produce/${o.id}`} key={`p${o.id}`} className="tb-row">
+                    <img className="tb-flag" src={flagUrl(o.countryCode)} alt="" />
+                    <span className="tb-main"><b>{o.name}</b><i>{o.region}, {o.country} · {o.quantityAvailable.toLocaleString()} {o.unit}</i></span>
+                    <span className="tb-price ask">{px(o.price)}</span>
+                  </Link>
+                ))}
+                {sellOrders.map(o => (
+                  <div key={`s${o.id}`} className={`tb-row ${o.status !== 'Open' ? 'filled' : ''}`}>
+                    <img className="tb-flag" src={flagUrl(o.countryCode)} alt="" />
+                    <span className="tb-main"><b>{o.buyerName} <em className={`kd ${o.kind.toLowerCase()}`}>{KIND_LABEL[o.kind]}</em></b><i>{o.quantity.toLocaleString()} {o.unit}{o.region ? ` · ${o.region}` : ''}</i></span>
+                    <span className="tb-price ask">{px(o.targetPrice)}</span>
+                  </div>
+                ))}
+                {offers.length + sellOrders.length === 0 && <div className="tb-empty">No offers right now.</div>}
               </div>
-            ))}
+            </div>
+            <div className="tb-col">
+              <div className="tb-head"><span className="tb-title bid">Bids · buy depth</span><span className="tb-sub">{bids.length}</span></div>
+              <div className="tb-rows">
+                {bids.map(b => (
+                  <div key={b.id} className={`tb-row ${b.status !== 'Open' ? 'filled' : ''}`}>
+                    <img className="tb-flag" src={flagUrl(b.countryCode)} alt="" />
+                    <span className="tb-main"><b>{b.buyerName} <em className={`kd ${b.kind.toLowerCase()}`}>{KIND_LABEL[b.kind]}</em></b><i>{b.quantity.toLocaleString()} {b.unit}{b.region ? ` · ${b.region}` : ''}</i></span>
+                    <span className="tb-price bid">{px(b.targetPrice)}</span>
+                  </div>
+                ))}
+                {bids.length === 0 && <div className="tb-empty">No open bids — post one.</div>}
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* Order ticket */}
+        <aside className="term-ticket panel">
+          <div className="panel-title">Order · {selected}</div>
+
+          <div className="tk-side">
+            <button className={`tk-side-btn sell ${side === 'Sell' ? 'active' : ''}`} onClick={() => setSide('Sell')}>
+              SELL<b>{px(bidKes)}</b>
+            </button>
+            <button className={`tk-side-btn buy ${side === 'Buy' ? 'active' : ''}`} onClick={() => setSide('Buy')}>
+              BUY<b>{px(askKes)}</b>
+            </button>
+          </div>
+
+          <label className="tk-label">Volume ({unit})</label>
+          <div className="tk-vol">
+            <button onClick={() => setVol(String(Math.max(0, volNum - 50)))}>−</button>
+            <input type="number" min="0" step="any" value={vol} onChange={e => setVol(e.target.value)} />
+            <button onClick={() => setVol(String(volNum + 50))}>+</button>
+          </div>
+          <div className="tk-chips">{[100, 500, 1000, 5000].map(v => <button key={v} onClick={() => setVol(String(v))}>{v.toLocaleString()}</button>)}</div>
+
+          <label className="tk-label">Stop loss ({symbol})
+            <div className="tk-mini">{[1, 2, 5].map(p => <button key={p} onClick={() => setSlPct(p)}>-{p}%</button>)}<button onClick={() => setSl('')}>×</button></div>
+          </label>
+          <input className="tk-input" type="number" step="any" value={sl} onChange={e => setSl(e.target.value)} placeholder="optional" />
+
+          <label className="tk-label">Take profit ({symbol})
+            <div className="tk-mini">{[2, 5, 10].map(p => <button key={p} onClick={() => setTpPct(p)}>+{p}%</button>)}<button onClick={() => setTp('')}>×</button></div>
+          </label>
+          <input className="tk-input" type="number" step="any" value={tp} onChange={e => setTp(e.target.value)} placeholder="optional" />
+
+          <div className="tk-preview">
+            <div><span>Entry</span><b>{px(entryKes)}</b></div>
+            <div><span>Margin ({LEVERAGE}×)</span><b>{money(marginKes)}</b></div>
+            {slKes != null && <div><span>P/L at SL</span><b className="down">{money(plAt(slKes))}</b></div>}
+            {tpKes != null && <div><span>P/L at TP</span><b className="up">{money(plAt(tpKes))}</b></div>}
+          </div>
+
+          {tErr && <div className="tk-err">{tErr}</div>}
+
+          <div className="tk-actions">
+            <button className="tk-do sell" onClick={() => trade('Sell')}>SELL {volNum.toLocaleString()} {unit}</button>
+            <button className="tk-do buy" onClick={() => trade('Buy')}>BUY {volNum.toLocaleString()} {unit}</button>
+          </div>
+
+          <button className="tk-adv" onClick={() => setShowAdv(true)}>⚙ Advanced · limit / futures / puts & delivery →</button>
+        </aside>
+      </div>
+
+      {/* Bottom terminal */}
+      <div className="term-terminal">
+        <div className="term-acct">
+          <div className="ac"><span>Balance</span><b>{money(acct.balance)}</b></div>
+          <div className="ac"><span>Equity</span><b>{money(acct.equity)}</b></div>
+          <div className="ac"><span>Margin</span><b>{money(acct.usedMargin)}</b></div>
+          <div className="ac"><span>Free margin</span><b>{money(acct.freeMargin)}</b></div>
+          <div className="ac"><span>Level</span><b>{acct.usedMargin > 0 ? acct.marginLevel.toFixed(0) + '%' : '—'}</b></div>
+          <div className="ac"><span>Floating P/L</span><b className={acct.openPl >= 0 ? 'up' : 'down'}>{money(acct.openPl)}</b></div>
+          <div className="ac-actions">
+            {engine.positions.length > 0 && <button className="term-btn danger" onClick={engine.closeAll}>Close all</button>}
+            <button className="term-btn" onClick={engine.resetAccount}>Reset demo</button>
           </div>
         </div>
 
-        <div className="mk-cta">
-          Looking to move a consignment? <Link to="/delivery">Check delivery routes &amp; prices →</Link>
+        <div className="term-tabs">
+          <button className={tab === 'positions' ? 'active' : ''} onClick={() => setTab('positions')}>Positions ({engine.positions.length})</button>
+          <button className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}>History ({engine.history.length})</button>
+          <button className={tab === 'journal' ? 'active' : ''} onClick={() => setTab('journal')}>Journal</button>
+        </div>
+
+        <div className="term-panel">
+          {tab === 'positions' && (
+            engine.positions.length === 0 ? <div className="tp-empty">No open positions. Place a BUY or SELL to start trading.</div> : (
+              <table className="tp-table">
+                <thead><tr><th>Symbol</th><th>Type</th><th>Vol</th><th>Open</th><th>S/L</th><th>T/P</th><th>Price</th><th>P/L</th><th></th></tr></thead>
+                <tbody>
+                  {engine.positions.map(p => {
+                    const pq = engine.quotes[p.symbol];
+                    const cur = pq ? closePriceOf(p, pq) : p.openPrice;
+                    const pl = pq ? livePl(p, pq) : 0;
+                    const editing = editId === p.id;
+                    return (
+                      <tr key={p.id}>
+                        <td className="tp-sym">{categoryIcon(p.symbol)} {p.symbol}</td>
+                        <td className={p.side === 'Buy' ? 'up' : 'down'}>{p.side.toLowerCase()}</td>
+                        <td>{p.volume.toLocaleString()}</td>
+                        <td>{px(p.openPrice)}</td>
+                        <td>{editing ? <input className="tp-edit" type="number" step="any" value={eSl} onChange={e => setESl(e.target.value)} /> : (p.sl != null ? px(p.sl) : '—')}</td>
+                        <td>{editing ? <input className="tp-edit" type="number" step="any" value={eTp} onChange={e => setETp(e.target.value)} /> : (p.tp != null ? px(p.tp) : '—')}</td>
+                        <td>{px(cur)}</td>
+                        <td className={pl >= 0 ? 'up' : 'down'}>{money(pl)}</td>
+                        <td className="tp-act">
+                          {editing ? (
+                            <>
+                              <button className="tp-btn ok" onClick={saveEdit}>Save</button>
+                              <button className="tp-btn" onClick={() => setEditId(null)}>✕</button>
+                            </>
+                          ) : (
+                            <>
+                              <button className="tp-btn" onClick={() => startEdit(p)}>✎</button>
+                              <button className="tp-btn close" onClick={() => engine.close(p.id)}>Close</button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )
+          )}
+
+          {tab === 'history' && (
+            engine.history.length === 0 ? <div className="tp-empty">No closed trades yet.</div> : (
+              <table className="tp-table">
+                <thead><tr><th>Symbol</th><th>Type</th><th>Vol</th><th>Open</th><th>Close</th><th>Reason</th><th>P/L</th><th>Closed</th></tr></thead>
+                <tbody>
+                  {engine.history.map(h => (
+                    <tr key={h.id}>
+                      <td className="tp-sym">{categoryIcon(h.symbol)} {h.symbol}</td>
+                      <td className={h.side === 'Buy' ? 'up' : 'down'}>{h.side.toLowerCase()}</td>
+                      <td>{h.volume.toLocaleString()}</td>
+                      <td>{px(h.openPrice)}</td>
+                      <td>{px(h.closePrice)}</td>
+                      <td><span className={`rz ${h.reason}`}>{h.reason.toUpperCase()}</span></td>
+                      <td className={h.pl >= 0 ? 'up' : 'down'}>{money(h.pl)}</td>
+                      <td className="tp-time">{new Date(h.closedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+          )}
+
+          {tab === 'journal' && (
+            engine.journal.length === 0 ? <div className="tp-empty">Trade activity and alerts will appear here.</div> : (
+              <div className="tj-list">
+                {engine.journal.map(j => (
+                  <div key={j.id} className={`tj-row ${j.kind}`}>
+                    <span className="tj-time">{new Date(j.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                    <span className="tj-text">{j.text}</span>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
         </div>
       </div>
+
+      <div className="term-foot">
+        Demo commodity CFDs for education — no real funds. Trade physical produce on the <Link to="/browse">marketplace</Link> or <Link to="/delivery">check delivery routes →</Link>
+      </div>
+
+      {/* Toast */}
+      {engine.toast && (
+        <div className={`term-toast ${engine.toast.kind}`}>
+          <b>{engine.toast.title}</b>
+          <span>{engine.toast.body}</span>
+        </div>
+      )}
+
+      {/* Advanced / exchange modal */}
+      {showAdv && (
+        <div className="term-modal" onClick={() => setShowAdv(false)}>
+          <div className="term-modal-card" onClick={e => e.stopPropagation()}>
+            <button className="term-modal-x" onClick={() => setShowAdv(false)}>✕</button>
+            <TradeTicket
+              ctx={{ commodity: selected, unit, referencePriceKes: midKes }}
+              initialSide={side}
+              onPlaced={() => { setReloadKey(k => k + 1); }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -163,6 +163,8 @@ export interface CommodityDto {
   high: number;
   changePct: number;
   listings: number;
+  bid: number;
+  ask: number;
 }
 
 export interface PricePoint {
