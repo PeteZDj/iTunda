@@ -32,6 +32,7 @@ public class AuthController : ControllerBase
         var user = new User
         {
             Name = request.Name,
+            Username = await Slug.UniqueAsync(_db, request.Name),
             Email = request.Email,
             Phone = request.Phone,
             Role = request.Role,
@@ -98,9 +99,11 @@ public class AuthController : ControllerBase
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user is null)
         {
+            var displayName = string.IsNullOrWhiteSpace(payload.Name) ? email.Split('@')[0] : payload.Name;
             user = new User
             {
-                Name = string.IsNullOrWhiteSpace(payload.Name) ? email.Split('@')[0] : payload.Name,
+                Name = displayName,
+                Username = await Slug.UniqueAsync(_db, displayName),
                 Email = email,
                 Phone = string.Empty,
                 Role = UserRole.Buyer,

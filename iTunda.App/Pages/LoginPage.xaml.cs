@@ -235,6 +235,9 @@ public class LoginPage : ContentPage
             _appState.SetSession(auth);
             Application.Current!.Windows[0].Page = new AppShell(_api, _appState);
         }
+        catch (ApiException aex) { ShowError(aex.Message); }
+        catch (HttpRequestException) { ShowError("Can't reach iTunda. Check your internet connection and try again."); }
+        catch (TaskCanceledException) { ShowError("The request timed out. Please try again."); }
         catch (Exception ex) { ShowError(ex.Message); }
         finally
         {

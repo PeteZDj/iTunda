@@ -71,14 +71,14 @@ export const getCategoryStats = (category: string) =>
 export const getFarmers = (county?: string) =>
   client.get<FarmerResponse[]>('/farmers', { params: county ? { county } : {} }).then(r => r.data);
 
-export const getFarmerById = (id: number) =>
-  client.get<FarmerResponse>(`/farmers/${id}`).then(r => r.data);
+export const getFarmerById = (key: number | string) =>
+  client.get<FarmerResponse>(`/farmers/${encodeURIComponent(String(key))}`).then(r => r.data);
 
 export const getMyFarmerProfile = () =>
   client.get<FarmerResponse>('/farmers/me').then(r => r.data);
 
-export const getMyListings = (farmerProfileId: number) =>
-  client.get<ProduceResponse[]>(`/farmers/${farmerProfileId}/produce`).then(r => r.data);
+export const getMyListings = (key: number | string) =>
+  client.get<ProduceResponse[]>(`/farmers/${encodeURIComponent(String(key))}/produce`).then(r => r.data);
 
 export const updateMyFarmerProfile = (data: object) =>
   client.put<FarmerResponse>('/farmers/me', data).then(r => r.data);

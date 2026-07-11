@@ -5,6 +5,7 @@ public class FarmerResponse
     public int Id { get; set; }
     public int UserId { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
     public string FarmName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Specialization { get; set; }

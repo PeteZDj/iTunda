@@ -42,7 +42,7 @@ public class ProduceController : ControllerBase
             p.FarmerProfile.RatingFarmer, p.FarmerProfile.OrdersFulfilled,
             p.FarmerProfile.Region, p.FarmerProfile.Country, p.FarmerProfile.CountryCode, p.FarmerProfile.Zone,
             hero, gallery, Media.IconUrl(p.Category),
-            p.IsDraft, p.DeliveryScope);
+            p.IsDraft, p.DeliveryScope, p.FarmerProfile!.User!.Username);
     }
 
     private static List<string> ParseImages(string? json)

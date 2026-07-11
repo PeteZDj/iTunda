@@ -18,7 +18,7 @@ public class FarmersController : ControllerBase
     public FarmersController(ItundaDbContext db) => _db = db;
 
     private static FarmerResponse ToResponse(FarmerProfile f) => new(
-        f.Id, f.UserId, f.User!.Name, f.FarmName, f.Description, f.Specialization,
+        f.Id, f.UserId, f.User!.Name, f.User!.Username, f.FarmName, f.Description, f.Specialization,
         f.Certifications, f.LocationCounty, f.LocationSubCounty, f.LocationTown,
         f.FarmLatitude, f.FarmLongitude,
         f.SizeOfFarmAcres, f.AbleToExportDirectly, f.ExportsDomain,
@@ -47,20 +47,33 @@ public class FarmersController : ControllerBase
         return Ok(ToResponse(farmer));
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<FarmerResponse>> GetById(int id)
+    // Accepts either a numeric profile id (legacy links) or a user's username slug.
+    private async Task<FarmerProfile?> ResolveAsync(string key)
     {
-        var farmer = await _db.FarmerProfiles.Include(f => f.User).FirstOrDefaultAsync(f => f.Id == id);
+        var query = _db.FarmerProfiles.Include(f => f.User).AsQueryable();
+        if (int.TryParse(key, out var id))
+            return await query.FirstOrDefaultAsync(f => f.Id == id);
+        var slug = key.ToLower();
+        return await query.FirstOrDefaultAsync(f => f.User!.Username.ToLower() == slug);
+    }
+
+    [HttpGet("{key}")]
+    public async Task<ActionResult<FarmerResponse>> GetByKey(string key)
+    {
+        var farmer = await ResolveAsync(key);
         if (farmer is null) return NotFound();
         return Ok(ToResponse(farmer));
     }
 
-    [HttpGet("{id}/produce")]
-    public async Task<ActionResult<List<ProduceResponse>>> GetProduce(int id)
+    [HttpGet("{key}/produce")]
+    public async Task<ActionResult<List<ProduceResponse>>> GetProduce(string key)
     {
+        var farmer = await ResolveAsync(key);
+        if (farmer is null) return Ok(new List<ProduceResponse>());
+
         var items = await _db.Produce
             .Include(p => p.FarmerProfile!.User)
-            .Where(p => p.FarmerProfileId == id && p.IsActive && !p.IsDraft)
+            .Where(p => p.FarmerProfileId == farmer.Id && p.IsActive && !p.IsDraft)
             .ToListAsync();
 
         return Ok(items.Select(ToProduceResponse));

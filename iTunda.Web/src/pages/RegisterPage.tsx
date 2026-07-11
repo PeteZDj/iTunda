@@ -73,9 +73,9 @@ export default function RegisterPage() {
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => setError('Google sign-up failed. Please try again.')}
-              width="100%"
               text="signup_with"
               shape="rectangular"
+              logo_alignment="center"
             />
           </div>
 

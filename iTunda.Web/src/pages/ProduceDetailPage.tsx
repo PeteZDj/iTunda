@@ -160,7 +160,7 @@ export default function ProduceDetailPage() {
                 </div>
               ))}
             </div>
-            <Link to={`/farmers/${item.farmerProfileId}`} className="btn btn-outline btn-sm" style={{ marginTop: 16 }}>
+            <Link to={`/farmers/${item.farmerUsername || item.farmerProfileId}`} className="btn btn-outline btn-sm" style={{ marginTop: 16 }}>
               View Full Farmer Profile →
             </Link>
           </div>

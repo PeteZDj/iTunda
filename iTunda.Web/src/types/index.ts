@@ -61,6 +61,7 @@ export interface ProduceResponse {
   iconUrl: string;
   isDraft: boolean;
   deliveryScope: string;
+  farmerUsername: string | null;
 }
 
 export interface CreateProduceRequest {
@@ -88,6 +89,7 @@ export interface FarmerResponse {
   id: number;
   userId: number;
   name: string;
+  username: string;
   farmName: string;
   description: string | null;
   specialization: string | null;

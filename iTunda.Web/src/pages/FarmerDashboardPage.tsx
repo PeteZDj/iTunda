@@ -56,7 +56,7 @@ export default function FarmerDashboardPage() {
         </nav>
         <div className="dash-side-links">
           <Link to="/account" className="btn btn-outline btn-sm dash-view-btn">Account & Profile →</Link>
-          {profile && <Link to={`/farmers/${profile.id}`} className="btn btn-outline btn-sm dash-view-btn">View Public Profile →</Link>}
+          {profile && <Link to={`/farmers/${profile.username || profile.id}`} className="btn btn-outline btn-sm dash-view-btn">View Public Profile →</Link>}
         </div>
       </aside>
 

@@ -35,7 +35,8 @@ public record ProduceResponse(
     List<string> Gallery,
     string IconUrl,
     bool IsDraft,
-    string DeliveryScope);
+    string DeliveryScope,
+    string? FarmerUsername = null);
 
 public record CreateProduceRequest(
     string Name,

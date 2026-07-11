@@ -4,6 +4,7 @@ public record FarmerResponse(
     int Id,
     int UserId,
     string Name,
+    string Username,
     string FarmName,
     string? Description,
     string? Specialization,

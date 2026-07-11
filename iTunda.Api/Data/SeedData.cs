@@ -70,6 +70,18 @@ public static class SeedData
         db.Users.AddRange(buyerUsers);
         await db.SaveChangesAsync();
 
+        // Assign URL-safe usernames (e.g. james-kamau) so profiles resolve by handle.
+        var takenUsernames = new HashSet<string>();
+        foreach (var u in db.Users.OrderBy(u => u.Id).ToList())
+        {
+            var baseSlug = iTunda.Api.Services.Slug.Make(u.Name);
+            var uname = baseSlug;
+            var n = 2;
+            while (!takenUsernames.Add(uname)) uname = $"{baseSlug}-{n++}";
+            u.Username = uname;
+        }
+        await db.SaveChangesAsync();
+
         // ── Farmer profiles anchored to real growing regions ───────────────
         var profiles = new List<FarmerProfile>();
         foreach (var d in farmerDefs)

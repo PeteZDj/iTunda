@@ -16,8 +16,7 @@ export default function FarmerProfilePage() {
 
   useEffect(() => {
     if (!id) return;
-    const fid = Number(id);
-    Promise.all([getFarmerById(fid), getMyListings(fid)])
+    Promise.all([getFarmerById(id), getMyListings(id)])
       .then(([f, l]) => { setFarmer(f); setListings(l); })
       .catch(() => setError('Farmer not found.'))
       .finally(() => setLoading(false));
@@ -36,7 +35,7 @@ export default function FarmerProfilePage() {
             <div className="fp-avatar-xl">{farmer.name[0]}</div>
             <div>
               <h1 className="fp-farm-name">{farmer.farmName}</h1>
-              <p className="fp-by">by {farmer.name}</p>
+              <p className="fp-by">by {farmer.name}{farmer.username ? ` · @${farmer.username}` : ''}</p>
               {farmer.phone && <p className="fp-phone">📞 {farmer.phone}</p>}
             </div>
             <div className="fp-stats">

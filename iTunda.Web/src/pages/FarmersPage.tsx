@@ -106,7 +106,7 @@ function FarmerCard({ farmer: f }: { farmer: FarmerResponse }) {
   const crops = (f.specialization || '').split(/[,&]/).map(s => s.trim()).filter(Boolean).slice(0, 3);
 
   return (
-    <Link to={`/farmers/${f.id}`} className="fc2">
+    <Link to={`/farmers/${f.username || f.id}`} className="fc2">
       <div className="fc2-cover" style={{ backgroundImage: `url(${gallery[0]})` }}>
         <div className="fc2-cover-grad" />
         {f.ableToExportDirectly && <span className="fc2-export">✈ Export-ready</span>}
