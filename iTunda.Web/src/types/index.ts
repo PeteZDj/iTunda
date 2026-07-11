@@ -203,6 +203,7 @@ export interface BuyOrderResponse {
   countryCode: string | null;
   zone: number;
   buyerName: string;
+  buyerContact: string | null;
   exportRequired: boolean;
   status: string;
   createdAt: string;

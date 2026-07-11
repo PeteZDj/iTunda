@@ -14,6 +14,7 @@ import FarmerProfilePage from './pages/FarmerProfilePage';
 import OrdersPage from './pages/OrdersPage';
 import FarmerDashboardPage from './pages/FarmerDashboardPage';
 import MarketPage from './pages/MarketPage';
+import BuyPage from './pages/BuyPage';
 import DeliveryPage from './pages/DeliveryPage';
 import DownloadsPage from './pages/DownloadsPage';
 import SellPage from './pages/SellPage';
@@ -36,6 +37,7 @@ export default function App() {
               <Route path="/browse" element={<WithNav><BrowsePage /></WithNav>} />
               <Route path="/browse/:category" element={<WithNav><BrowsePage /></WithNav>} />
               <Route path="/market" element={<WithNav><MarketPage /></WithNav>} />
+              <Route path="/buy" element={<WithNav><BuyPage /></WithNav>} />
               <Route path="/delivery" element={<WithNav><DeliveryPage /></WithNav>} />
               <Route path="/downloads" element={<WithNav><DownloadsPage /></WithNav>} />
               <Route path="/produce/:id" element={<WithNav><ProduceDetailPage /></WithNav>} />

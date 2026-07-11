@@ -239,6 +239,67 @@
 .term-modal-card { position: relative; width: 100%; max-width: 460px; }
 .term-modal-x { position: absolute; top: -32px; right: 0; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
 
+/* Clickable order-book rows (buttons styled like rows) */
+button.tb-row, .tb-row.clickable {
+  width: 100%; font: inherit; color: inherit; text-align: left; cursor: pointer;
+  background: none; border: none; border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.tb-row.clickable:hover { background: rgba(255,255,255,0.06); }
+
+/* Confirmation / party modal */
+.term-confirm {
+  width: 100%; max-width: 420px; background: var(--t-panel); border: 1px solid var(--t-border);
+  border-radius: 14px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+.tcf-head { display: flex; align-items: center; gap: 12px; padding: 18px 18px 14px; border-bottom: 1px solid var(--t-border); background: #0d1a24; }
+.tcf-head.buy { box-shadow: inset 4px 0 0 var(--t-up); }
+.tcf-head.sell { box-shadow: inset 4px 0 0 var(--t-down); }
+.tcf-ico { font-size: 30px; }
+.tcf-flag { width: 34px; height: 24px; border-radius: 4px; }
+.tcf-head h3 { margin: 0; font-size: 17px; color: #eaf2f8; }
+.tcf-head p { margin: 3px 0 0; font-size: 13px; color: var(--t-muted); }
+.tcf-head p b { color: #eaf2f8; }
+.tcf-rows { padding: 12px 18px; }
+.tcf-rows > div { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13.5px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.tcf-rows span { color: var(--t-muted); }
+.tcf-rows b { color: #eaf2f8; font-weight: 700; }
+.tcf-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; padding: 14px 18px 18px; }
+.tcf-actions .tk-do { padding: 12px; }
+
+/* ── Light theme override ─────────────────────────────────────────────────── */
+.term.light {
+  --t-bg: #eef3f7;
+  --t-panel: #ffffff;
+  --t-panel2: #f4f7fa;
+  --t-border: rgba(12,35,55,0.12);
+  --t-text: #1e2b36;
+  --t-muted: #5c6b7a;
+  background:
+    radial-gradient(1200px 500px at 80% -10%, rgba(31,174,116,0.10), transparent),
+    var(--t-bg);
+}
+.term.light .term-toolbar { background: linear-gradient(180deg, #ffffff, #f2f6fa); }
+.term.light .tt-name, .term.light .ac b, .term.light .tp-sym,
+.term.light .tcf-head h3, .term.light .tcf-head p b, .term.light .tcf-rows b,
+.term.light .gc-bot b, .term.light .gc-top span, .term.light .tb-main b,
+.term.light .tc-legend b, .term.light .tc-sym { color: #17222c; }
+.term.light .seg, .term.light .tk-vol input, .term.light .tk-input,
+.term.light .tk-side-btn, .term.light .tk-preview, .term.light .tk-chips button,
+.term.light .tk-mini button { background: #f1f5f9; }
+.term.light .tk-vol button, .term.light .term-btn { background: #eef3f8; color: #1e2b36; }
+.term.light .term-btn { border-color: var(--t-border); }
+.term.light .term-btn:hover { background: #e2eaf1; }
+.term.light .seg button.active { background: #d7e6f2; color: #12303f; }
+.term.light .tt-chg { background: rgba(12,35,55,0.06); }
+.term.light .term-acct, .term.light .tcf-head { background: #f4f7fa; }
+.term.light .term-toast { background: #ffffff; }
+.term.light .tb-row.clickable:hover, .term.light .tb-row:hover,
+.term.light .tw-row:hover { background: rgba(12,35,55,0.05); }
+.term.light .tc-grid { stroke: rgba(12,35,55,0.10); }
+.term.light .tc-axis { fill: #5c6b7a; }
+.term.light .tp-table td { color: #24333f; }
+.term.light .tk-vol input:focus, .term.light .tk-input:focus { border-color: var(--t-up); }
+
 /* Responsive */
 @media (max-width: 1120px) {
   .term-main { grid-template-columns: 200px minmax(0,1fr); }

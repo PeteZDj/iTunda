@@ -319,6 +319,14 @@ public class ProduceDetailPage : ContentPage
         var address = await DisplayPromptAsync("Delivery Address", "Enter your delivery address:", "Confirm", "Cancel");
         if (string.IsNullOrWhiteSpace(address)) return;
 
+        // Confirmation popup so the buyer clearly sees which commodity they buy.
+        var total = qty * (double)_item.Price;
+        var confirmed = await DisplayAlert(
+            $"Confirm purchase · {_item.Name}",
+            $"You are about to buy {qty:0.##} {_item.Unit} of {_item.Name} ({_item.Category}) for KSh {total:N0}.\n\nDeliver to: {address}",
+            $"✓ Buy {qty:0.##} {_item.Unit}", "Cancel");
+        if (!confirmed) return;
+
         try
         {
             await _api.CreateOrderAsync(new CreateOrderRequest
@@ -329,7 +337,7 @@ public class ProduceDetailPage : ContentPage
                     new OrderItemRequest { ProduceId = _item.Id, Quantity = qty }
                 }
             });
-            await DisplayAlert("Order Placed!", $"Your order for {qty} {_item.Unit} of {_item.Name} has been placed.", "OK");
+            await DisplayAlert("Order Placed!", $"Your order for {qty:0.##} {_item.Unit} of {_item.Name} has been placed.", "OK");
         }
         catch (Exception ex)
         {

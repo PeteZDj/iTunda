@@ -54,6 +54,7 @@ public record BuyOrderResponse(
     string? CountryCode,
     int Zone,
     string BuyerName,
+    string? BuyerContact,
     bool ExportRequired,
     string Status,
     DateTime CreatedAt,

@@ -53,3 +53,22 @@
 
 .tt-done-actions { display: flex; flex-direction: column; gap: 10px; }
 .tt-done-actions .btn { width: 100%; justify-content: center; border-radius: 8px; }
+
+/* Confirmation view */
+.tt-confirm { text-align: center; }
+.tt-confirm-ico {
+  width: 56px; height: 56px; margin: 4px auto 12px; border-radius: 16px; font-size: 28px;
+  display: flex; align-items: center; justify-content: center;
+}
+.tt-confirm-ico.buy { background: #eaf6ee; }
+.tt-confirm-ico.sell { background: #fdeaea; }
+.tt-confirm-title { font-family: var(--font-head); font-size: 19px; color: var(--green-800); margin: 0 0 6px; text-transform: capitalize; }
+.tt-confirm-sub { font-size: 13.5px; color: var(--muted); margin: 0 0 16px; line-height: 1.5; }
+.tt-confirm-sub b { color: var(--text); }
+.tt-confirm-rows { text-align: left; background: var(--tint); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; }
+.tt-confirm-rows > div { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13.5px; color: var(--muted); }
+.tt-confirm-rows b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.tt-confirm-rows .total { border-top: 1px dashed #cbdcd0; margin-top: 4px; padding-top: 9px; }
+.tt-confirm-rows .total b { color: var(--green-800); font-size: 16px; }
+.tt-confirm-actions { display: grid; grid-template-columns: 1fr 1.3fr; gap: 10px; }
+.tt-confirm-actions .btn { justify-content: center; border-radius: 9px; padding: 12px; }

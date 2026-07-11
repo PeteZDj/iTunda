@@ -19,7 +19,7 @@ public class BuyOrdersController : ControllerBase
     private static BuyOrderResponse ToResponse(BuyOrder b) => new(
         b.Id, b.Commodity, b.Variety, b.Grade, b.Unit, b.Quantity, b.TargetPrice,
         b.Side, b.Kind, b.ContractDate,
-        b.Region, b.Country, b.CountryCode, b.Zone, b.BuyerName, b.ExportRequired,
+        b.Region, b.Country, b.CountryCode, b.Zone, b.BuyerName, b.BuyerContact, b.ExportRequired,
         b.Status.ToString(), b.CreatedAt, b.NeededBy, Media.IconUrl(b.Commodity));
 
     [HttpGet]

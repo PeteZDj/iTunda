@@ -43,6 +43,11 @@ export default function MarketPage() {
   const [history, setHistory] = useState<PriceHistory | null>(null);
   const [histLoading, setHistLoading] = useState(true);
   const [view, setView] = useState<'chart' | 'grid'>('chart');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('itunda_term_theme') as 'dark' | 'light') || 'dark');
+  const [party, setParty] = useState<BuyOrderResponse | null>(null);
+  const [confirm, setConfirm] = useState<{ side: 'Buy' | 'Sell'; volume: number; slK: number | null; tpK: number | null } | null>(null);
+
+  useEffect(() => { localStorage.setItem('itunda_term_theme', theme); }, [theme]);
 
   const [offers, setOffers] = useState<ProduceResponse[]>([]);
   const [orders, setOrders] = useState<BuyOrderResponse[]>([]);
@@ -108,12 +113,21 @@ export default function MarketPage() {
   const setSlPct = (pct: number) => setSl(numCcy(side === 'Buy' ? entryKes * (1 - pct / 100) : entryKes * (1 + pct / 100)));
   const setTpPct = (pct: number) => setTp(numCcy(side === 'Buy' ? entryKes * (1 + pct / 100) : entryKes * (1 - pct / 100)));
 
+  // Clicking BUY/SELL opens a confirmation so the trader knows exactly what
+  // (e.g. "Avocados") and how much they are about to trade.
   const trade = (s: 'Buy' | 'Sell') => {
     setSide(s);
     setTErr('');
+    if (!(volNum > 0)) { setTErr('Enter a valid volume.'); return; }
     const slK = sl.trim() ? parseFloat(sl) / rate : null;
     const tpK = tp.trim() ? parseFloat(tp) / rate : null;
-    const err = engine.open(selected, s, volNum, slK != null && isFinite(slK) ? slK : null, tpK != null && isFinite(tpK) ? tpK : null);
+    setConfirm({ side: s, volume: volNum, slK: slK != null && isFinite(slK) ? slK : null, tpK: tpK != null && isFinite(tpK) ? tpK : null });
+  };
+
+  const confirmTrade = () => {
+    if (!confirm) return;
+    const err = engine.open(selected, confirm.side, confirm.volume, confirm.slK, confirm.tpK);
+    setConfirm(null);
     if (err) setTErr(err);
     else { setSl(''); setTp(''); }
   };
@@ -136,7 +150,7 @@ export default function MarketPage() {
   const bids = orders.filter(o => o.side === 'Buy').sort((a, z) => z.targetPrice - a.targetPrice);
 
   return (
-    <div className="term">
+    <div className={`term ${theme === 'light' ? 'light' : ''}`}>
       {/* Toolbar */}
       <div className="term-toolbar">
         <div className="tt-symbol">
@@ -165,6 +179,10 @@ export default function MarketPage() {
           <button className="term-btn" onClick={engine.requestNotify} title="Desktop alerts for SL/TP hits">
             {engine.notifyOn ? '🔔 Alerts on' : '🔕 Alerts'}
           </button>
+          <button className="term-btn" onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))} title="Toggle light / dark">
+            {theme === 'dark' ? '☀ Light' : '🌙 Dark'}
+          </button>
+          <Link to="/buy" className="term-btn" title="Classic buy & sell page">🛒 Buy page</Link>
         </div>
       </div>
 
@@ -227,11 +245,11 @@ export default function MarketPage() {
                   </Link>
                 ))}
                 {sellOrders.map(o => (
-                  <div key={`s${o.id}`} className={`tb-row ${o.status !== 'Open' ? 'filled' : ''}`}>
+                  <button key={`s${o.id}`} className={`tb-row clickable ${o.status !== 'Open' ? 'filled' : ''}`} onClick={() => setParty(o)} title={`View ${o.buyerName}`}>
                     <img className="tb-flag" src={flagUrl(o.countryCode)} alt="" />
                     <span className="tb-main"><b>{o.buyerName} <em className={`kd ${o.kind.toLowerCase()}`}>{KIND_LABEL[o.kind]}</em></b><i>{o.quantity.toLocaleString()} {o.unit}{o.region ? ` · ${o.region}` : ''}</i></span>
                     <span className="tb-price ask">{px(o.targetPrice)}</span>
-                  </div>
+                  </button>
                 ))}
                 {offers.length + sellOrders.length === 0 && <div className="tb-empty">No offers right now.</div>}
               </div>
@@ -240,11 +258,11 @@ export default function MarketPage() {
               <div className="tb-head"><span className="tb-title bid">Bids · buy depth</span><span className="tb-sub">{bids.length}</span></div>
               <div className="tb-rows">
                 {bids.map(b => (
-                  <div key={b.id} className={`tb-row ${b.status !== 'Open' ? 'filled' : ''}`}>
+                  <button key={b.id} className={`tb-row clickable ${b.status !== 'Open' ? 'filled' : ''}`} onClick={() => setParty(b)} title={`View ${b.buyerName}`}>
                     <img className="tb-flag" src={flagUrl(b.countryCode)} alt="" />
                     <span className="tb-main"><b>{b.buyerName} <em className={`kd ${b.kind.toLowerCase()}`}>{KIND_LABEL[b.kind]}</em></b><i>{b.quantity.toLocaleString()} {b.unit}{b.region ? ` · ${b.region}` : ''}</i></span>
                     <span className="tb-price bid">{px(b.targetPrice)}</span>
-                  </div>
+                  </button>
                 ))}
                 {bids.length === 0 && <div className="tb-empty">No open bids — post one.</div>}
               </div>
@@ -404,6 +422,68 @@ export default function MarketPage() {
       <div className="term-foot">
         Demo commodity CFDs for education — no real funds. Trade physical produce on the <Link to="/browse">marketplace</Link> or <Link to="/delivery">check delivery routes →</Link>
       </div>
+
+      {/* Confirmation — makes clear which commodity is being traded */}
+      {confirm && (
+        <div className="term-modal" onClick={() => setConfirm(null)}>
+          <div className="term-confirm" onClick={e => e.stopPropagation()}>
+            <div className={`tcf-head ${confirm.side === 'Buy' ? 'buy' : 'sell'}`}>
+              <span className="tcf-ico">{categoryIcon(selected)}</span>
+              <div>
+                <h3>Confirm {confirm.side === 'Buy' ? 'BUY' : 'SELL'} order</h3>
+                <p>You are about to {confirm.side === 'Buy' ? 'buy' : 'sell'} <b>{confirm.volume.toLocaleString()} {unit} of {selected}</b>.</p>
+              </div>
+            </div>
+            <div className="tcf-rows">
+              <div><span>Symbol</span><b>{selected} · CFD</b></div>
+              <div><span>Direction</span><b className={confirm.side === 'Buy' ? 'up' : 'down'}>{confirm.side.toUpperCase()}</b></div>
+              <div><span>Volume</span><b>{confirm.volume.toLocaleString()} {unit}</b></div>
+              <div><span>Entry price</span><b>{px(confirm.side === 'Buy' ? askKes : bidKes)}</b></div>
+              <div><span>Notional</span><b>{money((confirm.side === 'Buy' ? askKes : bidKes) * confirm.volume)}</b></div>
+              <div><span>Margin ({LEVERAGE}×)</span><b>{money(((confirm.side === 'Buy' ? askKes : bidKes) * confirm.volume) / LEVERAGE)}</b></div>
+              {confirm.slK != null && <div><span>Stop loss</span><b className="down">{px(confirm.slK)}</b></div>}
+              {confirm.tpK != null && <div><span>Take profit</span><b className="up">{px(confirm.tpK)}</b></div>}
+            </div>
+            <div className="tcf-actions">
+              <button className="term-btn" onClick={() => setConfirm(null)}>Cancel</button>
+              <button className={`tk-do ${confirm.side === 'Buy' ? 'buy' : 'sell'}`} onClick={confirmTrade}>
+                Confirm {confirm.side === 'Buy' ? 'BUY' : 'SELL'} {confirm.volume.toLocaleString()} {unit}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Party (buyer / company / distributor) details */}
+      {party && (
+        <div className="term-modal" onClick={() => setParty(null)}>
+          <div className="term-confirm" onClick={e => e.stopPropagation()}>
+            <div className="tcf-head">
+              <img className="tcf-flag" src={flagUrl(party.countryCode)} alt="" />
+              <div>
+                <h3>{party.buyerName}</h3>
+                <p>{party.side === 'Sell' ? 'Offering to sell' : 'Bidding to buy'} {party.commodity} · {party.region ? `${party.region}, ` : ''}{party.country ?? '—'}</p>
+              </div>
+            </div>
+            <div className="tcf-rows">
+              <div><span>Order type</span><b>{party.side} · {KIND_LABEL[party.kind]}</b></div>
+              <div><span>Quantity</span><b>{party.quantity.toLocaleString()} {party.unit}</b></div>
+              <div><span>Target price</span><b>{px(party.targetPrice)}/{party.unit}</b></div>
+              {party.variety && <div><span>Variety</span><b>{party.variety}</b></div>}
+              {party.grade && <div><span>Grade</span><b>{party.grade}</b></div>}
+              <div><span>Status</span><b>{party.status}</b></div>
+              {party.contractDate && <div><span>Contract</span><b>{new Date(party.contractDate).toLocaleDateString()}</b></div>}
+              <div><span>Contact</span><b>{party.buyerContact || 'Via iTunda desk'}</b></div>
+            </div>
+            <div className="tcf-actions">
+              <button className="term-btn" onClick={() => setParty(null)}>Close</button>
+              <button className={`tk-do ${party.side === 'Sell' ? 'buy' : 'sell'}`} onClick={() => { setSide(party.side === 'Sell' ? 'Buy' : 'Sell'); setParty(null); setShowAdv(true); }}>
+                {party.side === 'Sell' ? '🛒 Buy from them' : '💰 Sell to them'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {engine.toast && (

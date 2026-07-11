@@ -32,6 +32,7 @@ export default function Navbar() {
         <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
           <Link to="/browse" className={active('/browse')} onClick={() => setMenuOpen(false)}>Browse</Link>
           <Link to="/market" className={active('/market')} onClick={() => setMenuOpen(false)}>Market</Link>
+          <Link to="/buy" className={active('/buy')} onClick={() => setMenuOpen(false)}>Buy</Link>
           <Link to="/delivery" className={active('/delivery')} onClick={() => setMenuOpen(false)}>Delivery</Link>
           <Link to="/farmers" className={active('/farmers')} onClick={() => setMenuOpen(false)}>Farmers</Link>
           <Link to="/downloads" className="nav-dl" onClick={() => setMenuOpen(false)}>⬇ Get the App</Link>

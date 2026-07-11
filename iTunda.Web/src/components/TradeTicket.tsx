@@ -54,6 +54,7 @@ export default function TradeTicket({ ctx, initialSide = 'Buy', initialKind = 'S
   const [busy, setBusy] = useState(false);
   const [ok, setOk] = useState('');
   const [err, setErr] = useState('');
+  const [confirming, setConfirming] = useState(false);
 
   const rate = rates[currency] ?? 1;
   const refPriceCcy = ctx.referencePriceKes * rate;
@@ -86,16 +87,31 @@ export default function TradeTicket({ ctx, initialSide = 'Buy', initialKind = 'S
     return '💰 Sell at market';
   }, [side, kind, isMarketBuy, totalKes, format]);
 
-  const submit = async () => {
-    setErr(''); setOk('');
-    if (qtyNum <= 0) { setErr('Enter a valid quantity.'); return; }
-    if (!isMarket && effPriceCcy <= 0) { setErr(`Enter a valid ${priceLabel.toLowerCase()}.`); return; }
-    if (needsDate && !contractDate) { setErr('Choose a contract / expiry date.'); return; }
+  const validate = (): string | null => {
+    if (qtyNum <= 0) return 'Enter a valid quantity.';
+    if (!isMarket && effPriceCcy <= 0) return `Enter a valid ${priceLabel.toLowerCase()}.`;
+    if (needsDate && !contractDate) return 'Choose a contract / expiry date.';
+    if (isMarketBuy) { if (!address.trim()) return 'Enter or pin a delivery address.'; }
+    else if (!trader.trim()) return 'Enter your name or company.';
+    return null;
+  };
 
-    // Market BUY of a specific listing → a real fulfilled order (needs login).
+  // Clicking the action button opens a confirmation so the trader clearly sees
+  // which commodity (e.g. "Avocados") and how much they're buying/selling.
+  const askConfirm = () => {
+    setErr(''); setOk('');
+    if (isMarketBuy && !isLoggedIn) { navigate('/login?next=' + encodeURIComponent(window.location.pathname + window.location.search)); return; }
+    const v = validate();
+    if (v) { setErr(v); return; }
+    setConfirming(true);
+  };
+
+  const submit = async () => {
+    setConfirming(false);
+    setErr(''); setOk('');
+
+    // Market BUY of a specific listing → a real fulfilled order.
     if (isMarketBuy) {
-      if (!isLoggedIn) { navigate('/login?next=' + encodeURIComponent(window.location.pathname + window.location.search)); return; }
-      if (!address.trim()) { setErr('Enter or pin a delivery address.'); return; }
       setBusy(true);
       try {
         await createOrder({
@@ -155,6 +171,35 @@ export default function TradeTicket({ ctx, initialSide = 'Buy', initialKind = 'S
             ? <button className="btn btn-primary" onClick={() => navigate('/orders')}>View my orders →</button>
             : <button className="btn btn-buy" onClick={() => navigate(`/market?c=${encodeURIComponent(ctx.commodity)}`)}>View the order book →</button>}
           <button className="btn btn-outline" onClick={() => setOk('')}>Place another</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (confirming) {
+    return (
+      <div className="tt-card">
+        <div className="tt-confirm">
+          <div className={`tt-confirm-ico ${side === 'Buy' ? 'buy' : 'sell'}`}>{side === 'Buy' ? '🛒' : '💰'}</div>
+          <h3 className="tt-confirm-title">Confirm {side.toLowerCase()} · {ctx.commodity}</h3>
+          <p className="tt-confirm-sub">
+            You are about to {side === 'Buy' ? 'buy' : 'sell'}{' '}
+            <b>{qtyNum.toLocaleString()} {ctx.unit} of {ctx.commodity}</b>{ctx.variety ? ` (${ctx.variety})` : ''}.
+          </p>
+          <div className="tt-confirm-rows">
+            <div><span>Order type</span><b>{side} · {KINDS.find(k => k.id === kind)?.label}</b></div>
+            <div><span>{isMarket ? 'Market price' : priceLabel}</span><b>{format(Math.round(effPriceCcy / rate))}/{ctx.unit}</b></div>
+            <div><span>Quantity</span><b>{qtyNum.toLocaleString()} {ctx.unit}</b></div>
+            {isMarketBuy && <div><span>Deliver to</span><b title={address}>{deliveryScope} · {address ? address.slice(0, 28) : '—'}</b></div>}
+            {needsDate && <div><span>{kind === 'Put' ? 'Expiry' : 'Delivery'}</span><b>{contractDate}</b></div>}
+            <div className="total"><span>{kind === 'Put' ? 'Notional' : 'Estimated total'}</span><b>{format(totalKes)}</b></div>
+          </div>
+          <div className="tt-confirm-actions">
+            <button className="btn btn-outline" disabled={busy} onClick={() => setConfirming(false)}>← Back</button>
+            <button className={`btn ${side === 'Buy' ? 'btn-buy' : 'btn-sell'}`} disabled={busy} onClick={submit}>
+              {busy ? 'Working…' : `✓ Confirm ${side.toLowerCase()}`}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -245,7 +290,7 @@ export default function TradeTicket({ ctx, initialSide = 'Buy', initialKind = 'S
         </div>
       </div>
 
-      <button className={`btn tt-submit ${side === 'Buy' ? 'btn-buy' : 'btn-sell'}`} disabled={busy} onClick={submit}>
+      <button className={`btn tt-submit ${side === 'Buy' ? 'btn-buy' : 'btn-sell'}`} disabled={busy} onClick={askConfirm}>
         {busy ? 'Working…' : submitLabel}
       </button>
       <p className="tt-note">

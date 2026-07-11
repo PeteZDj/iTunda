@@ -40,6 +40,18 @@ public class AppShell : Shell
             Items = { new ShellContent { Title = "Prices", Content = new PricesPage(api) } }
         });
 
+        tabBar.Items.Add(new Tab
+        {
+            Title = "Farms",
+            Items = { new ShellContent { Title = "Farms", Content = new FarmersPage(api, appState) } }
+        });
+
+        tabBar.Items.Add(new Tab
+        {
+            Title = "Delivery",
+            Items = { new ShellContent { Title = "Delivery", Content = new DeliveryPage() } }
+        });
+
         if (appState.Role == UserRole.Farmer)
         {
             tabBar.Items.Add(new Tab
