@@ -37,9 +37,9 @@ public class AppShell : Shell
 
         tabBar.Items.Add(new Tab
         {
-            Title = "Prices",
+            Title = "Market",
             Icon = "tab_prices.png",
-            Items = { new ShellContent { Title = "Prices", Content = new PricesPage(api) } }
+            Items = { new ShellContent { Title = "Market", Content = new PricesPage(api, appState) } }
         });
 
         tabBar.Items.Add(new Tab

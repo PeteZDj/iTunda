@@ -18,6 +18,9 @@ public class OrderItemRequest
 public class CreateOrderRequest
 {
     public string? DeliveryAddress { get; set; }
+    public string? DeliveryScope { get; set; }
+    public double? DeliveryLat { get; set; }
+    public double? DeliveryLng { get; set; }
     public List<OrderItemRequest> Items { get; set; } = new();
 }
 

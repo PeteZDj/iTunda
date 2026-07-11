@@ -1,3 +1,5 @@
+using iTunda.App.Services;
+
 namespace iTunda.App.Models;
 
 public class ProduceResponse
@@ -10,6 +12,7 @@ public class ProduceResponse
     public string Unit { get; set; } = string.Empty;
     public double QuantityAvailable { get; set; }
     public string? ImagePath { get; set; }
+    public DateTime? PlantingDate { get; set; }
     public DateTime? HarvestDate { get; set; }
     public DateTime? ExpiryDate { get; set; }
     public DateTime? AvailableFrom { get; set; }
@@ -35,8 +38,11 @@ public class ProduceResponse
     public string ImageUrl { get; set; } = string.Empty;
     public List<string> Gallery { get; set; } = new();
     public string IconUrl { get; set; } = string.Empty;
+    public bool IsDraft { get; set; }
+    public string DeliveryScope { get; set; } = "Both";
+    public string? FarmerUsername { get; set; }
 
-    public string PriceDisplay => $"KES {Price:0} / {Unit}";
+    public string PriceDisplay => $"{Currency.Format(Price)} / {Unit}";
     public string QuantityDisplay => $"{QuantityAvailable:0.#} {Unit}";
     public string ExpiryDisplay => ExpiryDate.HasValue ? $"Expires {ExpiryDate.Value:MMM d}" : "Fresh";
     public string LocationDisplay => !string.IsNullOrEmpty(Region)
@@ -60,9 +66,15 @@ public class CreateProduceRequest
     public string Unit { get; set; } = "kg";
     public double QuantityAvailable { get; set; }
     public string? ImagePath { get; set; }
+    public DateTime? PlantingDate { get; set; }
     public DateTime? HarvestDate { get; set; }
     public DateTime? ExpiryDate { get; set; }
     public DateTime? AvailableFrom { get; set; }
     public bool IsExportReady { get; set; }
     public string? GradeQuality { get; set; }
+    public double? FarmLatitude { get; set; }
+    public double? FarmLongitude { get; set; }
+    public string DeliveryScope { get; set; } = "Both";
+    public List<string> Images { get; set; } = new();
+    public bool IsDraft { get; set; }
 }

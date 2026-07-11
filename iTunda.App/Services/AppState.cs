@@ -36,6 +36,12 @@ public class AppState
         Preferences.Set(nameof(Role), (int)Role);
     }
 
+    public void SetName(string name)
+    {
+        Name = name;
+        Preferences.Set(nameof(Name), name);
+    }
+
     public void Clear()
     {
         Token  = null;

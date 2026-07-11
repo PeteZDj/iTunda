@@ -104,6 +104,69 @@ public class ApiClient
         return (await resp.Content.ReadFromJsonAsync<List<ProduceResponse>>()) ?? new();
     }
 
+    // The signed-in user's own produce, including unpublished drafts.
+    public async Task<List<ProduceResponse>> GetMyProduceAsync()
+    {
+        ApplyAuthHeader();
+        var resp = await _http.GetAsync("produce/mine");
+        await EnsureSuccess(resp);
+        return (await resp.Content.ReadFromJsonAsync<List<ProduceResponse>>()) ?? new();
+    }
+
+    public async Task<ProduceResponse> UpdateProduceAsync(int id, CreateProduceRequest request)
+    {
+        ApplyAuthHeader();
+        var resp = await _http.PutAsJsonAsync($"produce/{id}", request);
+        await EnsureSuccess(resp);
+        return (await resp.Content.ReadFromJsonAsync<ProduceResponse>())!;
+    }
+
+    public async Task DeleteProduceAsync(int id)
+    {
+        ApplyAuthHeader();
+        var resp = await _http.DeleteAsync($"produce/{id}");
+        await EnsureSuccess(resp);
+    }
+
+    // ── Commodity order book (buy/sell bids) ──────────────────────────────
+    public async Task<List<BuyOrderResponse>> GetBuyOrdersAsync(
+        string? commodity = null, string? side = null, string? kind = null)
+    {
+        var qs = new List<string>();
+        if (!string.IsNullOrWhiteSpace(commodity)) qs.Add($"commodity={Uri.EscapeDataString(commodity)}");
+        if (!string.IsNullOrWhiteSpace(side)) qs.Add($"side={side}");
+        if (!string.IsNullOrWhiteSpace(kind)) qs.Add($"kind={kind}");
+        var url = "buyorders" + (qs.Count == 0 ? "" : "?" + string.Join("&", qs));
+        var resp = await _http.GetAsync(url);
+        await EnsureSuccess(resp);
+        return (await resp.Content.ReadFromJsonAsync<List<BuyOrderResponse>>()) ?? new();
+    }
+
+    public async Task<BuyOrderResponse> CreateBuyOrderAsync(CreateBuyOrderRequest request)
+    {
+        ApplyAuthHeader();
+        var resp = await _http.PostAsJsonAsync("buyorders", request);
+        await EnsureSuccess(resp);
+        return (await resp.Content.ReadFromJsonAsync<BuyOrderResponse>())!;
+    }
+
+    // ── User profile ──────────────────────────────────────────────────────
+    public async Task<MeResponse> GetMeAsync()
+    {
+        ApplyAuthHeader();
+        var resp = await _http.GetAsync("auth/me");
+        await EnsureSuccess(resp);
+        return (await resp.Content.ReadFromJsonAsync<MeResponse>())!;
+    }
+
+    public async Task<MeResponse> UpdateMeAsync(UpdateMeRequest request)
+    {
+        ApplyAuthHeader();
+        var resp = await _http.PutAsJsonAsync("auth/me", request);
+        await EnsureSuccess(resp);
+        return (await resp.Content.ReadFromJsonAsync<MeResponse>())!;
+    }
+
     public async Task<List<FarmerResponse>> GetFarmersAsync(string? county = null)
     {
         var url = "farmers" + (string.IsNullOrWhiteSpace(county) ? "" : $"?county={Uri.EscapeDataString(county)}");

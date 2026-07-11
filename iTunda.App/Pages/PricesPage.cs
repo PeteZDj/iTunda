@@ -14,34 +14,61 @@ public class PricesPage : ContentPage
     static readonly Color Muted   = Color.FromArgb("#6B7C72");
 
     readonly ApiClient _api;
+    readonly AppState _appState;
     readonly Picker _picker;
+    readonly Picker _currencyPicker;
     readonly GraphicsView _chartView;
     readonly PriceChartDrawable _drawable = new();
     readonly ActivityIndicator _spinner;
     readonly Label _title, _sub, _vCurrent, _vAvg, _vLow, _vHigh, _vChange, _lChange;
     readonly VerticalStackLayout _board;
     readonly Button[] _rangeButtons;
+    readonly Button _tradeBtn;
 
     string _range = "1M";
     string _selected = "Avocados";
+    PriceHistory? _history;
     List<CommodityDto> _commodities = new();
     static readonly (string Id, string Long)[] Ranges = { ("1W", "1-week"), ("1M", "1-month"), ("1Y", "1-year") };
 
-    public PricesPage(ApiClient api)
+    public PricesPage(ApiClient api, AppState appState)
     {
         _api = api;
-        Title = "Prices";
+        _appState = appState;
+        Title = "Market";
         BackgroundColor = Color.FromArgb("#F3FAF5");
 
-        _title = new Label { Text = "Market Prices", FontSize = 26, FontAttributes = FontAttributes.Bold, TextColor = Colors.White };
-        _sub = new Label { Text = "Live farm-gate averages · spot, trends & timeframes", FontSize = 13, TextColor = Color.FromArgb("#A7E8C0") };
+        _title = new Label { Text = "Commodity Market", FontSize = 26, FontAttributes = FontAttributes.Bold, TextColor = Colors.White };
+        _sub = new Label { Text = "Live farm-gate prices · trade spot, limit & futures", FontSize = 13, TextColor = Color.FromArgb("#A7E8C0") };
+
+        _currencyPicker = new Picker
+        {
+            Title = "Currency",
+            TextColor = Colors.White,
+            TitleColor = Color.FromArgb("#A7E8C0"),
+            FontSize = 13,
+            FontAttributes = FontAttributes.Bold,
+            BackgroundColor = Color.FromArgb("#0E5C30"),
+            WidthRequest = 96,
+            HorizontalOptions = LayoutOptions.End
+        };
+        foreach (var c in Currency.All) _currencyPicker.Items.Add(c.Code);
+        _currencyPicker.SelectedItem = Currency.Current.Code;
+        _currencyPicker.SelectedIndexChanged += OnCurrencyChanged;
+
+        var headerTop = new Grid
+        {
+            ColumnDefinitions = { new ColumnDefinition(GridLength.Star), new ColumnDefinition(GridLength.Auto) }
+        };
+        headerTop.Add(new VerticalStackLayout { Spacing = 4, Children = { _title, _sub } }, 0, 0);
+        headerTop.Add(_currencyPicker, 1, 0);
 
         var header = new VerticalStackLayout
         {
             BackgroundColor = Primary,
             Padding = new Thickness(20, 44, 20, 22),
             Spacing = 4,
-            Children = { _title, _sub }
+            Children = { headerTop }
         };
 
         _picker = new Picker
@@ -87,6 +114,19 @@ public class PricesPage : ContentPage
         AddStat(stats, 3, StatLabel("High"), _vHigh);
         AddStat(stats, 4, _lChange, _vChange);
 
+        _tradeBtn = new Button
+        {
+            Text = "Buy / Sell",
+            BackgroundColor = Amber,
+            TextColor = Colors.White,
+            FontAttributes = FontAttributes.Bold,
+            CornerRadius = 24,
+            HeightRequest = 48,
+            FontSize = 15,
+            Margin = new Thickness(0, 4, 0, 0)
+        };
+        _tradeBtn.Clicked += OnTradeClicked;
+
         var chartCard = new Frame
         {
             BackgroundColor = Colors.White,
@@ -97,7 +137,7 @@ public class PricesPage : ContentPage
             Content = new VerticalStackLayout
             {
                 Spacing = 10,
-                Children = { _picker, rangeBar, stats, _spinner, _chartView }
+                Children = { _picker, rangeBar, stats, _spinner, _chartView, _tradeBtn }
             }
         };
 
@@ -111,7 +151,7 @@ public class PricesPage : ContentPage
                 {
                     header,
                     chartCard,
-                    new Label { Text = "All commodities", FontSize = 16, FontAttributes = FontAttributes.Bold, TextColor = Primary, Margin = new Thickness(20, 6, 20, 0) },
+                    new Label { Text = "All commodities · tap to trade", FontSize = 16, FontAttributes = FontAttributes.Bold, TextColor = Primary, Margin = new Thickness(20, 6, 20, 0) },
                     _board
                 }
             }
@@ -165,6 +205,23 @@ public class PricesPage : ContentPage
         }
     }
 
+    void OnCurrencyChanged(object? sender, EventArgs e)
+    {
+        if (_currencyPicker.SelectedItem is string code)
+        {
+            Currency.Set(code);
+            BuildBoard();
+            RenderStats();
+        }
+    }
+
+    async void OnTradeClicked(object? sender, EventArgs e)
+    {
+        var commodity = _commodities.FirstOrDefault(c => c.Category == _selected);
+        if (commodity is null) return;
+        await Navigation.PushAsync(new CommodityTradePage(_api, _appState, commodity));
+    }
+
     async Task LoadAsync()
     {
         try
@@ -177,13 +234,20 @@ public class PricesPage : ContentPage
             _picker.SelectedItem = _selected;
             BuildBoard();
             await LoadHistoryAsync();
+            _ = RefreshRatesAsync();
         }
         catch
         {
-            _title.Text = "Market Prices";
+            _title.Text = "Commodity Market";
             _sub.Text = "Could not load prices — check your connection.";
         }
         finally { _spinner.IsVisible = _spinner.IsRunning = false; }
+    }
+
+    async Task RefreshRatesAsync()
+    {
+        await Currency.LoadRatesAsync();
+        MainThread.BeginInvokeOnMainThread(() => { BuildBoard(); RenderStats(); });
     }
 
     void BuildBoard()
@@ -194,16 +258,28 @@ public class PricesPage : ContentPage
             var up = c.IsUp;
             var rowGrid = new Grid
             {
+                ColumnSpacing = 8,
                 ColumnDefinitions =
                 {
+                    new ColumnDefinition(new GridLength(30)),
                     new ColumnDefinition(GridLength.Star),
-                    new ColumnDefinition(GridLength.Auto),
-                    new ColumnDefinition(new GridLength(72)),
+                    new ColumnDefinition(new GridLength(84)),
+                    new ColumnDefinition(new GridLength(70)),
                 },
             };
-            rowGrid.Add(new Label { Text = c.Category, FontAttributes = FontAttributes.Bold, TextColor = Primary, VerticalOptions = LayoutOptions.Center }, 0, 0);
-            rowGrid.Add(new Label { Text = c.PriceDisplay, TextColor = Color.FromArgb("#17271E"), VerticalOptions = LayoutOptions.Center }, 1, 0);
-            rowGrid.Add(new Label { Text = c.ChangeDisplay, TextColor = up ? Accent : Color.FromArgb("#C0392B"), FontAttributes = FontAttributes.Bold, HorizontalTextAlignment = TextAlignment.End, VerticalOptions = LayoutOptions.Center }, 2, 0);
+            rowGrid.Add(new Image { Source = c.IconUrl, WidthRequest = 24, HeightRequest = 24, VerticalOptions = LayoutOptions.Center }, 0, 0);
+            rowGrid.Add(new VerticalStackLayout
+            {
+                Spacing = 1,
+                VerticalOptions = LayoutOptions.Center,
+                Children =
+                {
+                    new Label { Text = c.Category, FontAttributes = FontAttributes.Bold, TextColor = Primary },
+                    new Label { Text = $"Bid {c.BidDisplay}  ·  Ask {c.AskDisplay}", FontSize = 11, TextColor = Muted }
+                }
+            }, 1, 0);
+            rowGrid.Add(new Label { Text = c.PriceDisplay, FontSize = 12, TextColor = Color.FromArgb("#17271E"), HorizontalTextAlignment = TextAlignment.End, VerticalOptions = LayoutOptions.Center }, 2, 0);
+            rowGrid.Add(new Label { Text = c.ChangeDisplay, TextColor = up ? Accent : Color.FromArgb("#C0392B"), FontSize = 12, FontAttributes = FontAttributes.Bold, HorizontalTextAlignment = TextAlignment.End, VerticalOptions = LayoutOptions.Center }, 3, 0);
 
             var row = new Frame
             {
@@ -211,12 +287,12 @@ public class PricesPage : ContentPage
                 CornerRadius = 12,
                 HasShadow = false,
                 BorderColor = Color.FromArgb("#E4EFE8"),
-                Padding = new Thickness(14, 10),
+                Padding = new Thickness(12, 10),
                 Content = rowGrid
             };
             var tap = new TapGestureRecognizer();
-            var cat = c.Category;
-            tap.Tapped += async (_, _) => { _selected = cat; _picker.SelectedItem = cat; await LoadHistoryAsync(); };
+            var captured = c;
+            tap.Tapped += async (_, _) => await Navigation.PushAsync(new CommodityTradePage(_api, _appState, captured));
             row.GestureRecognizers.Add(tap);
             _board.Add(row);
         }
@@ -227,22 +303,12 @@ public class PricesPage : ContentPage
         try
         {
             _spinner.IsVisible = _spinner.IsRunning = true;
-            var h = await _api.GetPriceHistoryAsync(_selected, _range);
-            var longLabel = Ranges.First(r => r.Id == _range).Long;
-            _title.Text = $"{_selected} prices";
-            _sub.Text = $"Average farm-gate price · per {h?.Unit ?? "kg"}";
-
-            if (h != null)
+            _history = await _api.GetPriceHistoryAsync(_selected, _range);
+            RenderStats();
+            if (_history != null)
             {
-                _vCurrent.Text = $"KES {h.Current:0}";
-                _vAvg.Text = $"KES {h.Avg:0}";
-                _vLow.Text = $"KES {h.Low:0}";
-                _vHigh.Text = $"KES {h.High:0}";
-                _lChange.Text = $"{longLabel}";
-                _vChange.Text = $"{(h.IsUp ? "\u25B2" : "\u25BC")} {Math.Abs(h.ChangePct):0.0}%";
-                _vChange.TextColor = h.IsUp ? Accent : Color.FromArgb("#C0392B");
-                _drawable.Points = h.Points;
-                _drawable.Up = h.IsUp;
+                _drawable.Points = _history.Points;
+                _drawable.Up = _history.IsUp;
             }
             else
             {
@@ -252,5 +318,21 @@ public class PricesPage : ContentPage
         }
         catch { }
         finally { _spinner.IsVisible = _spinner.IsRunning = false; }
+    }
+
+    void RenderStats()
+    {
+        var longLabel = Ranges.First(r => r.Id == _range).Long;
+        _title.Text = $"{_selected} market";
+        var h = _history;
+        _sub.Text = $"Average farm-gate price · per {h?.Unit ?? "kg"}";
+        if (h == null) return;
+        _vCurrent.Text = Currency.Format(h.Current);
+        _vAvg.Text = Currency.Format(h.Avg);
+        _vLow.Text = Currency.Format(h.Low);
+        _vHigh.Text = Currency.Format(h.High);
+        _lChange.Text = longLabel;
+        _vChange.Text = $"{(h.IsUp ? "\u25B2" : "\u25BC")} {Math.Abs(h.ChangePct):0.0}%";
+        _vChange.TextColor = h.IsUp ? Accent : Color.FromArgb("#C0392B");
     }
 }
