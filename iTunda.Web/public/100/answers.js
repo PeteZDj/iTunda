@@ -109,3 +109,11 @@ window.ANSWERS = {
   99: { status:"doing", text:"Chase PMF: repeat real trades with satisfied farmers and buyers." },
   100:{ status:"doing", text:"Evaluate expansion: more commodities, regions and export corridors, trade financing and data products." }
 };
+
+/* __DESIGN__ brand-adaptive design tokens for the /100 page */
+window.SITE.design = {"mode":"light","primary":"#0E7A3E","accent":"#F4A621","scale":"#16A34A","launch":"#0A4A26","setup":"#0E7A3E","bg":"#ffffff","bg2":"#f5f7fb","card":"#ffffff","line":"#e7ecf3","radius":16,"headFont":"'Poppins'","bodyFont":"'Inter'","fontLink":"https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap","logo":"/favicon.svg"};
+/* __END_DESIGN__ */
+
+/* __DESIGN__ brand-adaptive design tokens for the /100 page */
+window.SITE.design = {"mode":"light","primary":"#0E7A3E","accent":"#F4A621","scale":"#16A34A","launch":"#0A4A26","setup":"#0E7A3E","bg":"#ffffff","bg2":"#f5f7fb","card":"#ffffff","line":"#e7ecf3","radius":16,"headFont":"'Poppins'","bodyFont":"'Inter'","fontLink":"https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap","logo":"/favicon.svg"};
+/* __END_DESIGN__ */
