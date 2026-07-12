@@ -22,7 +22,8 @@ public class OrdersController : ControllerBase
 
     private static OrderResponse ToResponse(Order o) => new(
         o.Id, o.Status, o.DeliveryAddress, o.DeliveryScope, o.TotalAmount, o.CreatedAt,
-        o.Items.Select(i => new OrderItemResponse(i.ProduceId, i.Produce!.Name, i.Quantity, i.UnitPriceAtOrder)).ToList());
+        o.Items.Select(i => new OrderItemResponse(i.ProduceId, i.Produce!.Name, i.Quantity, i.UnitPriceAtOrder)).ToList(),
+        o.RequestedDeliveryAt, o.Packaging);
 
     [HttpPost]
     [Authorize]
@@ -40,6 +41,8 @@ public class OrdersController : ControllerBase
             DeliveryScope = request.DeliveryScope == "Export" ? "Export" : "Local",
             DeliveryLat = request.DeliveryLat,
             DeliveryLng = request.DeliveryLng,
+            RequestedDeliveryAt = request.RequestedDeliveryAt,
+            Packaging = string.IsNullOrWhiteSpace(request.Packaging) ? null : request.Packaging.Trim(),
         };
 
         decimal total = 0;

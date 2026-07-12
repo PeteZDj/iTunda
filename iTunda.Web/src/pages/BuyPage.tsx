@@ -5,6 +5,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { flagUrl } from '../lib/geo';
 import { categoryIcon } from '../lib/categories';
 import TradeTicket from '../components/TradeTicket';
+import BuyPanel from '../components/BuyPanel';
 import PriceChart from '../components/PriceChart';
 import type { CommodityDto, BuyOrderResponse, ProduceResponse, PriceHistory, OrderSide } from '../types';
 import './BuyPage.css';
@@ -70,10 +71,10 @@ export default function BuyPage() {
     <div className="market-page">
       <div className="mk-hero">
         <div className="page-container">
-          <h1 className="mk-title">Buy &amp; Sell Produce</h1>
+          <h1 className="mk-title">Buy Fresh Produce</h1>
           <p className="mk-sub">
-            The classic iTunda desk — pick a commodity, review live farm-gate prices and place a
-            buy or sell order (spot, limit, forward or put). No account needed to post to the book.
+            Pick a commodity, choose a farmer’s offer and buy the real produce — by the kilo, basket,
+            crate or bunch — with local or international delivery scheduled for a time that suits you.
           </p>
           <Link to="/market" className="mk-hero-link">⇅ Prefer the pro trading terminal? Open Market →</Link>
         </div>
@@ -153,17 +154,21 @@ export default function BuyPage() {
               <div><span className="mk-stat-l">Unit</span><span className="mk-stat-v">{active.unit}</span></div>
             </div>
             <div className="mk-summary-actions">
-              <button className="btn btn-buy btn-sm" onClick={() => openTicket('Buy')}>BUY</button>
               <button className="btn btn-sell btn-sm" onClick={() => openTicket('Sell')}>SELL</button>
+              <button className="btn btn-outline btn-sm" onClick={() => openTicket('Buy')}>Limit / Futures</button>
             </div>
           </div>
         )}
 
-        {/* Trade ticket (has a built-in confirmation naming the commodity) */}
+        {/* Primary buy flow — buy the real produce with delivery */}
+        <BuyPanel commodity={selected} offers={offers} onPlaced={() => setReloadKey(k => k + 1)} />
+
+        {/* Advanced order-book ticket (sell offers, limit, futures, puts) */}
         {showTicket && active && (
           <div className="mk-ticket-wrap">
             <div className="mk-ticket-close">
-              <button className="btn btn-outline btn-sm" onClick={() => setShowTicket(false)}>✕ Close ticket</button>
+              <span className="mk-ticket-head-label">Advanced order · posts to the exchange book</span>
+              <button className="btn btn-outline btn-sm" onClick={() => setShowTicket(false)}>✕ Close</button>
             </div>
             <TradeTicket
               ctx={{ commodity: selected, unit, referencePriceKes: active.avgPrice }}

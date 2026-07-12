@@ -24,6 +24,12 @@ public class Order
     public double? DeliveryLat { get; set; }
     public double? DeliveryLng { get; set; }
 
+    /// <summary>When the buyer wants the produce delivered.</summary>
+    public DateTime? RequestedDeliveryAt { get; set; }
+
+    /// <summary>How the buyer is purchasing, e.g. "5 baskets (~50 kg)".</summary>
+    public string? Packaging { get; set; }
+
     public decimal TotalAmount { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

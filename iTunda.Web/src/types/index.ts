@@ -128,6 +128,8 @@ export interface OrderResponse {
   totalAmount: number;
   createdAt: string;
   items: OrderItemResponse[];
+  requestedDeliveryAt?: string | null;
+  packaging?: string | null;
 }
 
 export interface CreateOrderRequest {
@@ -136,6 +138,8 @@ export interface CreateOrderRequest {
   deliveryScope?: string;
   deliveryLat?: number | null;
   deliveryLng?: number | null;
+  requestedDeliveryAt?: string | null;
+  packaging?: string | null;
 }
 
 export interface CategoryStats {

@@ -9,7 +9,9 @@ public record CreateOrderRequest(
     List<CreateOrderItemRequest> Items,
     string? DeliveryScope = null,
     double? DeliveryLat = null,
-    double? DeliveryLng = null);
+    double? DeliveryLng = null,
+    DateTime? RequestedDeliveryAt = null,
+    string? Packaging = null);
 
 public record OrderItemResponse(int ProduceId, string ProduceName, double Quantity, decimal UnitPriceAtOrder);
 
@@ -20,4 +22,6 @@ public record OrderResponse(
     string DeliveryScope,
     decimal TotalAmount,
     DateTime CreatedAt,
-    List<OrderItemResponse> Items);
+    List<OrderItemResponse> Items,
+    DateTime? RequestedDeliveryAt = null,
+    string? Packaging = null);

@@ -74,6 +74,14 @@ export default function OrdersPage() {
               ))}
             </div>
 
+            {(order.packaging || order.requestedDeliveryAt || order.deliveryScope) && (
+              <div className="order-meta">
+                {order.packaging && <span className="order-chip">🧺 {order.packaging}</span>}
+                <span className="order-chip">{order.deliveryScope === 'Export' ? '✈ International' : '🏠 Local'} delivery</span>
+                {order.requestedDeliveryAt && <span className="order-chip">🕒 {fmt(order.requestedDeliveryAt)}</span>}
+              </div>
+            )}
+
             <div className="order-footer">
               {order.deliveryAddress && (
                 <span className="order-address">📍 {order.deliveryAddress}</span>

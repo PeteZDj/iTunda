@@ -43,6 +43,22 @@
 .order-item-qty { color: var(--muted); }
 .order-item-price { font-weight: 700; color: var(--amber); text-align: right; }
 
+.order-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 20px 0;
+}
+.order-chip {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-dark, #0a5226);
+  background: var(--tint, #f3faf5);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 11px;
+}
+
 .order-footer {
   display: flex;
   align-items: center;

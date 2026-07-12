@@ -71,8 +71,9 @@
 .mk-summary-actions { display: flex; gap: 8px; }
 .mk-summary-actions .btn { min-width: 66px; font-weight: 800; letter-spacing: 0.5px; }
 
-.mk-ticket-wrap { max-width: 460px; margin: 0 0 20px; }
-.mk-ticket-close { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.mk-ticket-wrap { max-width: 460px; margin: 18px 0 20px; }
+.mk-ticket-close { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.mk-ticket-head-label { font-size: 12px; font-weight: 700; color: var(--muted); }
 
 /* Order kind badge */
 .mk-kind { font-size: 9px; font-weight: 800; letter-spacing: 0.4px; padding: 1px 5px; border-radius: 4px; vertical-align: middle; margin-left: 4px; }

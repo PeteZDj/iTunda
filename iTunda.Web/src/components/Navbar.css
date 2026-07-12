@@ -84,6 +84,8 @@
 .nav-cta-ghost:hover { background: rgba(255, 255, 255, 0.12); }
 .nav-cta-trade { color: #052a15; background: linear-gradient(180deg, #4fe08a, #22b15a); box-shadow: 0 4px 14px rgba(34, 177, 90, 0.42); }
 .nav-cta-trade:hover { filter: brightness(1.06); }
+.nav-cta-buy { color: #fff; background: linear-gradient(180deg, #16a34a, #0e7a3e); box-shadow: 0 4px 14px rgba(14, 122, 62, 0.42); }
+.nav-cta-buy:hover { filter: brightness(1.08); }
 .nav-cta-gold { color: #3a2600; background: linear-gradient(180deg, #ffcf5e, #f4a621); box-shadow: 0 4px 14px rgba(244, 166, 33, 0.4); }
 .nav-cta-gold:hover { filter: brightness(1.05); }
 
