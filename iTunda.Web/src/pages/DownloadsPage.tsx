@@ -49,10 +49,10 @@ export default function DownloadsPage() {
                   ⬇ Download Android APK{apkSize ? ` · ${apkSize}` : ''}
                 </a>
               )}
-              <a className="btn btn-lg btn-outline-white" href="https://github.com/PeteZDj/iTunda" target="_blank" rel="noreferrer">
-                View source on GitHub
-              </a>
             </div>
+            <p className="dl-note">
+              A fresh, fast <b>React Native</b> build designed mobile-first.
+            </p>
             <p className="dl-note">
               Android 8.0+ · Free · You may need to allow “install from unknown sources”.
               {apkReady === false && ' The signed build is being prepared and this link activates automatically once it’s ready.'}

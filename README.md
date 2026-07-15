@@ -198,3 +198,18 @@ nssm restart itunda-api
 ## 📄 License
 
 © iTunda — Global Farm-to-Fork Commodity Marketplace.
+
+
+## Mobile App (React Native)
+
+<img src="itunda-rn/assets/images/icon.png" alt="iTunda app icon" width="72" align="left" />
+
+**iTunda for Android** is a native mobile app built with **React Native (Expo)** -- trade fresh produce farm-to-futures - buy, sell, bid and track deliveries from your phone.
+
+**[Download the Android app](https://itunda.org/dl/itunda.apk)**
+
+- **Source:** [`itunda-rn/`](itunda-rn) -- the full Expo Router + TypeScript project.
+- **Stack:** Expo SDK 57, Expo Router, TypeScript, React Native, AsyncStorage.
+- Runs on Android 7.0+ (arm64 / armv7). You may need to allow *install from unknown sources*.
+
+<br clear="left" />
