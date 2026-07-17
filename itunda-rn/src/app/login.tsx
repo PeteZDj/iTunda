@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { googleBridgeSignIn } from '@/lib/googleBridge';
 import { C, GRAD, font, radius } from '@/theme';
 import { GradientButton, OutlineButton, Row, Txt } from '@/ui';
 import { DEMO_ACCOUNTS, useApp, type Role } from '@/store';
@@ -28,10 +29,24 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'signin' | 'join'>('signin');
+  const [busy, setBusy] = useState(false);
 
   const go = (n: string, e: string, r: Role, provider: 'email' | 'google' | 'demo' = 'email') => {
     signIn(n || e.split('@')[0], e, r, provider);
     router.back();
+  };
+
+  const google = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await googleBridgeSignIn();
+      if (res && res.email) go(res.name, res.email, role, 'google');
+    } catch (e) {
+      Alert.alert('Google sign-in failed', e instanceof Error ? e.message : 'Please try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -104,7 +119,7 @@ export default function Login() {
           <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
         </Row>
 
-        <OutlineButton title="Continue with Google" icon="logo-google" onPress={() => go('Google User', 'user@gmail.com', role, 'google')} />
+        <OutlineButton title={busy ? 'Opening Google…' : 'Continue with Google'} icon="logo-google" onPress={google} />
 
         {/* Demo accounts */}
         <Txt f={font.bodySemi} size={12} color={C.textSub} style={{ marginTop: 22, marginBottom: 10 }}>

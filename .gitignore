@@ -20,8 +20,6 @@ node_modules/
 dist/
 dist-ssr/
 *.local
-.env
-.env.*
 !.env.example
 
 ## Logs & temp
@@ -35,3 +33,4 @@ iTunda.Web/public/dl/*.apk
 ## OS
 .DS_Store
 Thumbs.db
+config.bat
