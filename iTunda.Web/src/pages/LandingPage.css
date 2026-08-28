@@ -5,6 +5,24 @@
   background:
     radial-gradient(1200px 600px at 80% -10%, rgba(34, 177, 90, 0.55) 0%, transparent 60%),
     linear-gradient(160deg, #0a4a26 0%, #0e7a3e 55%, #12833f 100%);
+}
+
+/* Studio photograph behind the gradient. The gradient stays on top at high
+   opacity so the headline keeps its contrast; the photo reads as depth rather
+   than as a picture competing with the type. */
+.hero-photo {
+  position: absolute;
+  inset: 0;
+  background-image: url("/images/studio-crates.webp");
+  background-size: cover;
+  background-position: 72% center;
+  opacity: 0.28;
+  mix-blend-mode: luminosity;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero {
   min-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -362,4 +380,58 @@
   .trust-item { border-right: none; }
   .cta-inner { flex-direction: column; text-align: center; }
   .section-header { flex-direction: column; align-items: flex-start; }
+}
+
+/* ---- Studio band -------------------------------------------------------
+   Three photographs from the same shoot, in the site's own green/white/brown
+   palette. Sits between the hero and the rest of the page as a visual pause. */
+.studio {
+  background: var(--bg, #f3faf5);
+  padding: 72px 0;
+  border-top: 1px solid var(--border, #dbeae1);
+  border-bottom: 1px solid var(--border, #dbeae1);
+}
+.studio-head { text-align: center; max-width: 62ch; margin: 0 auto 34px; padding: 0 20px; }
+.studio-eyebrow {
+  display: inline-block;
+  background: var(--accent-light, #dcfce7);
+  color: var(--primary-dark, #0a5226);
+  font-family: var(--font-head, Poppins), sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 5px 12px; border-radius: 999px; margin-bottom: 14px;
+}
+.studio-title {
+  font-family: var(--font-head, Poppins), sans-serif;
+  font-size: clamp(26px, 3.4vw, 38px); font-weight: 700;
+  color: var(--text, #102a1c); margin: 0 0 10px; line-height: 1.18; letter-spacing: -.02em;
+}
+.studio-sub { color: var(--muted, #5c6c63); margin: 0; font-size: 17px; line-height: 1.65; }
+
+.studio-grid {
+  display: grid; gap: 18px; padding: 0 20px;
+  max-width: 1180px; margin: 0 auto;
+  grid-template-columns: repeat(3, 1fr);
+}
+.studio-item {
+  position: relative; border-radius: 16px; overflow: hidden;
+  background: #fff; border: 1px solid var(--border, #dbeae1);
+  aspect-ratio: 1 / 1;
+}
+.studio-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.studio-item figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 26px 16px 14px;
+  background: linear-gradient(to top, rgba(10, 82, 38, .88) 0%, rgba(10, 82, 38, 0) 100%);
+  color: #fff; font-size: 14px; font-weight: 600;
+  font-family: var(--font-head, Poppins), sans-serif;
+}
+.studio-wide { grid-column: 1 / -1; aspect-ratio: 21 / 8; }
+
+@media (max-width: 900px) {
+  .studio-grid { grid-template-columns: repeat(2, 1fr); }
+  .studio-wide { aspect-ratio: 16 / 9; }
+}
+@media (max-width: 560px) {
+  .studio { padding: 52px 0; }
+  .studio-grid { grid-template-columns: 1fr; }
 }

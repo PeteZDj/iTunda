@@ -59,6 +59,7 @@ export default function LandingPage() {
     <div className="landing">
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section className="hero">
+        <div className="hero-photo" />
         <div className="hero-bg-orb hero-orb-1" />
         <div className="hero-bg-orb hero-orb-2" />
         <div className="hero-bg-orb hero-orb-3" />
@@ -102,6 +103,35 @@ export default function LandingPage() {
         <div className="hero-scroll-hint">
           <div className="scroll-dot" />
           <span>Scroll to explore</span>
+        </div>
+      </section>
+
+      {/* ── STUDIO BAND ──────────────────────────────────────── */}
+      <section className="studio">
+        <div className="studio-head">
+          <span className="studio-eyebrow">From the shoot</span>
+          <h2 className="studio-title">Grown, graded, packed, exported.</h2>
+          <p className="studio-sub">
+            The produce moving through iTunda, photographed the way it leaves the farm.
+          </p>
+        </div>
+        <div className="studio-grid">
+          <figure className="studio-item">
+            <img src="/images/studio-hands.webp" alt="Freshly picked tea leaves held in cupped hands" loading="lazy" width="1200" height="1200" />
+            <figcaption>Picked by hand</figcaption>
+          </figure>
+          <figure className="studio-item">
+            <img src="/images/studio-avocado.webp" alt="A ripe avocado halved on a clay plate" loading="lazy" width="1200" height="1200" />
+            <figcaption>Graded for export</figcaption>
+          </figure>
+          <figure className="studio-item">
+            <img src="/images/studio-basket.webp" alt="A sisal basket filled with mixed green produce" loading="lazy" width="1200" height="1200" />
+            <figcaption>Packed the same day</figcaption>
+          </figure>
+          <figure className="studio-item studio-wide">
+            <img src="/images/studio-farmers.webp" alt="Two farmers behind a table of baskets holding avocados, tea and macadamia" loading="lazy" width="2400" height="1350" />
+            <figcaption>Growers across 26 regions and 4 export zones</figcaption>
+          </figure>
         </div>
       </section>
 
@@ -266,6 +296,15 @@ export default function LandingPage() {
           <div className="footer-brand">
             <span className="nav-logo-text" style={{ fontSize: 20 }}>🌿 iTunda</span>
             <p>The global farm-to-fork commodity marketplace connecting farmers, stores and exporters.</p>
+            <a
+              href="https://docall.app/itunda.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 10, color: 'inherit' }}
+            >
+              <span aria-hidden="true">&#9742;</span>
+              <span>Call us on <u>docall.app/itunda.org</u></span>
+            </a>
           </div>
           <div className="footer-links">
             <strong>Platform</strong>
