@@ -59,6 +59,7 @@ export default function RootLayout() {
             <Stack.Screen name="orders" />
             <Stack.Screen name="sell" />
             <Stack.Screen name="downloads" />
+            <Stack.Screen name="auth" options={{ animation: 'none' }} />
             <Stack.Screen name="login" options={{ presentation: 'modal' }} />
           </Stack>
         </ItundaProvider>

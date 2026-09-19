@@ -1,0 +1,12 @@
+{
+  "apps": {
+    "itunda": {
+      "versionCode": 2,
+      "versionName": "1.1.0",
+      "apkUrl": "https://itunda.org/dl/itunda-1.1.0.apk",
+      "notes": "Fix Google Sign-in on mobile and deep link routing.",
+      "mandatory": true,
+      "sizeMB": 67.0
+    }
+  }
+}
