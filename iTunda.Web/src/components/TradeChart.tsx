@@ -11,11 +11,12 @@ interface Props {
   livePrice?: number | null;
   px: (kes: number) => string;
   height?: number;
+  samplePrices?: boolean;
 }
 
 // Candlestick chart drawn as plain SVG (no charting lib). OHLC is synthesised
 // deterministically from the average-price series so it looks like a real feed.
-export default function TradeChart({ points, symbol, livePrice, px, height = 380 }: Props) {
+export default function TradeChart({ points, symbol, livePrice, px, height = 380, samplePrices = false }: Props) {
   const candles = useMemo<Candle[]>(() => {
     const cs: Candle[] = [];
     for (let i = 0; i < points.length; i++) {
@@ -99,7 +100,7 @@ export default function TradeChart({ points, symbol, livePrice, px, height = 380
         <text x={padL + iw / 2} y={H - 7} className="tc-axis" textAnchor="middle">{fmtDate(candles[Math.floor(candles.length / 2)].date)}</text>
         <text x={W - padR} y={H - 7} className="tc-axis" textAnchor="end">{fmtDate(lastCandle.date)}</text>
       </svg>
-      <div className="tc-note">Simulated OHLC from farm-gate averages · {px(Math.round(last))}</div>
+      <div className="tc-note">{samplePrices ? 'Simulated OHLC from sample prices' : 'Simulated OHLC from farm-gate averages'} · {px(Math.round(last))}</div>
     </div>
   );
 }

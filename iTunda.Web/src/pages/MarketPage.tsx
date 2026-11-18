@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { getCommodities, getBuyOrders, getProduce, getPriceHistory } from '../services/api';
+import { getBuyOrders, getProduce, getPriceHistory } from '../services/api';
+import { getMarketOverview, sampleHistory } from '../lib/marketData';
 import { useCurrency } from '../context/CurrencyContext';
 import { flagUrl } from '../lib/geo';
 import { categoryIcon } from '../lib/categories';
@@ -20,6 +21,8 @@ const RANGES = [
 
 const KIND_LABEL: Record<string, string> = { Spot: 'SPOT', Limit: 'LIMIT', Futures: 'FUT', Put: 'PUT' };
 
+const emptyCommodities: CommodityDto[] = [];
+
 function Spark({ series, up }: { series: number[]; up: boolean }) {
   const min = Math.min(...series), max = Math.max(...series);
   const span = max - min || 1;
@@ -37,11 +40,14 @@ export default function MarketPage() {
   const { format, convert, symbol, rates, currency } = useCurrency();
   const rate = rates[currency] ?? 1;
 
-  const [commodities, setCommodities] = useState<CommodityDto[]>([]);
-  const [selected, setSelected] = useState<string>(params.get('c') || 'Avocados');
+  const [market, setMarket] = useState<Awaited<ReturnType<typeof getMarketOverview>> | null>(null);
+  const commodities = market?.commodities ?? emptyCommodities;
+  const requested = params.get('c') || 'Avocados';
+  const commodity = commodities.find(item => item.category === requested) ?? commodities[0];
+  const selected = commodity?.category ?? requested;
+  const samplePrices = market?.sampleCategories.has(selected) ?? false;
   const [range, setRange] = useState('1M');
   const [history, setHistory] = useState<PriceHistory | null>(null);
-  const [histLoading, setHistLoading] = useState(true);
   const [view, setView] = useState<'chart' | 'grid'>('chart');
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('itunda_term_theme') as 'dark' | 'light') || 'dark');
   const [party, setParty] = useState<BuyOrderResponse | null>(null);
@@ -69,22 +75,32 @@ export default function MarketPage() {
   const money = useCallback((kes: number) => (kes < 0 ? '-' : '') + format(Math.abs(kes)), [format]);
 
   // ── data loads ──────────────────────────────────────────────────────────
-  useEffect(() => { getCommodities().then(setCommodities).catch(() => {}); }, []);
+  useEffect(() => { getMarketOverview().then(setMarket); }, []);
 
   useEffect(() => {
-    setHistLoading(true);
-    getPriceHistory(selected, range).then(setHistory).catch(() => setHistory(null)).finally(() => setHistLoading(false));
-  }, [selected, range]);
+    if (!commodity) return;
+    let current = true;
+    const fallback = () => sampleHistory(commodity, range);
+    const request = samplePrices ? Promise.resolve(fallback()) : getPriceHistory(selected, range).catch(fallback);
+    request.then(result => { if (current) setHistory(result); });
+    return () => { current = false; };
+  }, [commodity, range, samplePrices, selected]);
 
   useEffect(() => {
+    let current = true;
+    setOffers([]);
+    setOrders([]);
     Promise.all([getProduce({ category: selected }), getBuyOrders({ commodity: selected })])
-      .then(([p, b]) => { setOffers([...p].sort((a, z) => a.price - z.price).slice(0, 14)); setOrders(b); })
+      .then(([p, b]) => {
+        if (!current) return;
+        setOffers([...p].sort((a, z) => a.price - z.price).slice(0, 14));
+        setOrders(b);
+      })
       .catch(() => {});
+    return () => { current = false; };
   }, [selected, reloadKey]);
 
-  useEffect(() => { const c = params.get('c'); if (c && c !== selected) setSelected(c); }, [params]); // eslint-disable-line
-
-  const selectCommodity = (c: string) => { setSelected(c); setParams({ c }, { replace: true }); };
+  const selectCommodity = (c: string) => setParams({ c }, { replace: true });
 
   // ── selected symbol quote ────────────────────────────────────────────────
   const cReq = useMemo(() => commodities.find(c => c.category === selected), [commodities, selected]);
@@ -157,7 +173,7 @@ export default function MarketPage() {
           <span className="tt-ico">{categoryIcon(selected)}</span>
           <div>
             <div className="tt-name">{selected}<span className="tt-unit">·CFD /{unit}</span></div>
-            <div className="tt-sub">iTunda Commodity Exchange · demo trading</div>
+            <div className="tt-sub">Demo trading · simulated quotes and charts</div>
           </div>
         </div>
 
@@ -212,9 +228,9 @@ export default function MarketPage() {
         <main className="term-center">
           <div className="term-chart panel">
             {view === 'chart' ? (
-              histLoading ? <div className="term-loading">Loading chart…</div>
-                : history ? <TradeChart points={history.points} symbol={selected} livePrice={midKes} px={px} height={360} />
-                  : <div className="tc-empty">No chart data for {selected}.</div>
+              history?.category === selected && history.range === range
+                ? <TradeChart points={history.points} symbol={selected} livePrice={midKes} px={px} height={360} samplePrices={samplePrices} />
+                : <div className="term-loading">Loading chart…</div>
             ) : (
               <div className="term-grid-charts">
                 {commodities.map(c => {
@@ -223,7 +239,7 @@ export default function MarketPage() {
                   const up = (wq?.changePct ?? c.changePct) >= 0;
                   return (
                     <button key={c.category} className={`gc-card ${selected === c.category ? 'active' : ''}`} onClick={() => selectCommodity(c.category)}>
-                      <div className="gc-top"><img src={c.iconUrl} alt="" /><span>{c.category}</span></div>
+                      <div className="gc-top">{c.iconUrl ? <img src={c.iconUrl} alt="" /> : <span aria-hidden="true">{categoryIcon(c.category)}</span>}<span>{c.category}</span></div>
                       <Spark series={sparkFor(c.category, base, wq?.changePct ?? c.changePct)} up={up} />
                       <div className="gc-bot"><b>{px(wq?.price ?? c.avgPrice)}</b><span className={up ? 'up' : 'down'}>{up ? '▲' : '▼'}{Math.abs(wq?.changePct ?? c.changePct).toFixed(2)}%</span></div>
                     </button>

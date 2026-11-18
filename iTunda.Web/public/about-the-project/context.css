@@ -1,0 +1,14 @@
+.afro-project-context {
+  position: relative;
+  z-index: 1;
+  display: block;
+  box-sizing: border-box;
+  padding: 12px 18px;
+  border-top: 1px solid #c9dbc8;
+  background: #f3f7ef;
+  color: #1b352a;
+  text-align: center;
+  font: 600 13px/1.4 system-ui, sans-serif;
+}
+.afro-project-context a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.afro-project-context a:focus-visible { outline: 2px solid #1e6845; outline-offset: 4px; }

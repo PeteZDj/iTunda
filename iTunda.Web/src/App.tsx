@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { RegionProvider } from './context/RegionContext';
 import { CurrencyProvider } from './context/CurrencyContext';
@@ -21,8 +21,7 @@ import SellPage from './pages/SellPage';
 import AccountPage from './pages/AccountPage';
 
 function WithNav({ children }: { children: React.ReactNode }) {
-  const { pathname } = useLocation();
-  return <><Navbar />{pathname === '/market' && <CommodityTicker />}{children}</>;
+  return <><Navbar /><CommodityTicker />{children}</>;
 }
 
 export default function App() {

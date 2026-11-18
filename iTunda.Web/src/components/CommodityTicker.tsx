@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCommodities } from '../services/api';
+import { getMarketOverview } from '../lib/marketData';
+import { categoryIcon } from '../lib/categories';
 import { useCurrency } from '../context/CurrencyContext';
 import CurrencySelector from './CurrencySelector';
 import type { CommodityDto } from '../types';
@@ -12,7 +13,7 @@ export default function CommodityTicker() {
   const { format } = useCurrency();
 
   useEffect(() => {
-    getCommodities().then(setItems).catch(() => setItems([]));
+    getMarketOverview().then(({ commodities }) => setItems(commodities));
   }, []);
 
   if (items.length === 0) return null;
@@ -24,9 +25,9 @@ export default function CommodityTicker() {
         key={key}
         className="tk-item"
         onClick={() => navigate(`/market?c=${encodeURIComponent(c.category)}`)}
-        title={`Trade ${c.category} · avg ${format(c.avgPrice)}/${c.unit} · ${c.listings} listings — click to open the exchange`}
+        title={`Open ${c.category} in the demo market. Percentage changes are simulated.`}
       >
-        <img className="tk-icon" src={c.iconUrl} alt="" loading="lazy" />
+        {c.iconUrl ? <img className="tk-icon" src={c.iconUrl} alt="" loading="lazy" /> : <span aria-hidden="true">{categoryIcon(c.category)}</span>}
         <span className="tk-name">{c.category}</span>
         <span className="tk-price">{format(c.avgPrice)}</span>
         <span className={`tk-change ${up ? 'up' : 'down'}`}>
@@ -40,7 +41,7 @@ export default function CommodityTicker() {
   return (
     <div className="commodity-ticker">
       <button className="tk-tag" onClick={() => navigate('/market')} title="Open the Commodity Exchange">
-        <span className="tk-dot" /> LIVE PRICES
+        <span className="tk-dot" /> DEMO MARKET
       </button>
       <div className="tk-viewport">
         <div className="tk-track" style={{ animationDuration: `${Math.max(28, items.length * 4.5)}s` }}>
