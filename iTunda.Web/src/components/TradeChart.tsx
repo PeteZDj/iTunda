@@ -55,7 +55,7 @@ export default function TradeChart({ points, symbol, livePrice, px, height = 380
   const lastUp = last >= candles[0].c;
 
   const grid = [0, 0.25, 0.5, 0.75, 1].map(t => ({ yy: padT + t * ih, v: hi - t * span }));
-  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
   const lastCandle = candles[candles.length - 1];
 
   return (
@@ -91,7 +91,7 @@ export default function TradeChart({ points, symbol, livePrice, px, height = 380
 
         {/* Live price line + tag */}
         <line x1={padL} y1={y(last)} x2={W - padR} y2={y(last)} className="tc-lastline" vectorEffect="non-scaling-stroke" />
-        <g>
+        <g className="tc-price-label">
           <rect x={W - padR} y={y(last) - 10} width={padR} height={20} fill={lastUp ? UP : DOWN} />
           <text x={W - padR / 2} y={y(last) + 4} className="tc-lasttag" textAnchor="middle">{last.toFixed(2)}</text>
         </g>

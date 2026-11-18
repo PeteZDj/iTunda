@@ -215,7 +215,10 @@ export default function MarketPage() {
               const dir = wq ? (wq.price >= wq.prevPrice ? 'up' : 'down') : '';
               return (
                 <button key={c.category} className={`tw-row ${selected === c.category ? 'active' : ''}`} onClick={() => selectCommodity(c.category)}>
-                  <span className="tw-sym"><img src={c.iconUrl} alt="" />{c.category}</span>
+                  <span className="tw-sym" title={c.category}>
+                    {c.iconUrl ? <img src={c.iconUrl} alt="" /> : <span aria-hidden="true">{categoryIcon(c.category)}</span>}
+                    <span className="tw-name">{c.category}</span>
+                  </span>
                   <span className={`tw-bid ${dir}`}>{px(b)}</span>
                   <span className={`tw-ask ${dir}`}>{px(a)}</span>
                 </button>
@@ -446,8 +449,8 @@ export default function MarketPage() {
             <div className={`tcf-head ${confirm.side === 'Buy' ? 'buy' : 'sell'}`}>
               <span className="tcf-ico">{categoryIcon(selected)}</span>
               <div>
-                <h3>Confirm {confirm.side === 'Buy' ? 'BUY' : 'SELL'} order</h3>
-                <p>You are about to {confirm.side === 'Buy' ? 'buy' : 'sell'} <b>{confirm.volume.toLocaleString()} {unit} of {selected}</b>.</p>
+                <h3>Confirm demo {confirm.side === 'Buy' ? 'BUY' : 'SELL'} order</h3>
+                <p>This practice order uses <b>{confirm.volume.toLocaleString()} {unit} of {selected}</b> in the simulator.</p>
               </div>
             </div>
             <div className="tcf-rows">

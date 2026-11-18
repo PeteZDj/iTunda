@@ -40,7 +40,7 @@
 .tt-px.ask b { color: var(--t-up); }
 .tt-spread { display: flex; flex-direction: column; line-height: 1.15; text-align: center; }
 .tt-spread b { font-size: 14px; color: var(--t-muted); font-weight: 700; }
-.tt-chg { font-size: 14px; font-weight: 800; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.05); }
+.tt-chg { font-size: 14px; font-weight: 800; padding: 4px 10px; border-radius: 8px; white-space: nowrap; background: rgba(255,255,255,0.05); }
 .tt-chg.up { color: var(--t-up); } .tt-chg.down { color: var(--t-down); }
 
 .tt-tools { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -84,7 +84,8 @@
 .tw-row:hover { background: rgba(255,255,255,0.04); }
 .tw-row.active { background: linear-gradient(90deg, rgba(31,174,116,0.16), transparent); box-shadow: inset 3px 0 0 var(--t-up); }
 .tw-sym { display: flex; align-items: center; gap: 7px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tw-sym img { width: 16px; height: 16px; }
+.tw-sym img, .tw-sym > [aria-hidden] { flex: 0 0 16px; width: 16px; height: 16px; }
+.tw-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .tw-bid, .tw-ask { text-align: right; min-width: 62px; font-weight: 700; color: var(--t-muted); }
 .tw-bid.up, .tw-ask.up { color: var(--t-up); }
 .tw-bid.down, .tw-ask.down { color: var(--t-down); }
@@ -312,4 +313,7 @@ button.tb-row, .tb-row.clickable {
   .tw-list { max-height: 180px; }
   .term-book { grid-template-columns: 1fr; }
   .tt-tools { width: 100%; }
+  .tt-quote { min-width: 0; flex-wrap: wrap; gap: 8px 12px; }
+  .tt-px b { font-size: clamp(15px, 5vw, 20px); }
+  .tt-chg { font-size: 12px; }
 }
