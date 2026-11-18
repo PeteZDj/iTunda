@@ -6,6 +6,8 @@ import { flagUrl, ZONES } from '../lib/geo';
 import { categoryIcon } from '../lib/categories';
 import type { ProduceResponse } from '../types';
 import ProduceCard from '../components/ProduceCard';
+import { DemoTomatoSection } from '../components/TomatoDemo';
+import { demoTomatoLots, matchesDemoTomato } from '../lib/demoTomatoes';
 import './BrowsePage.css';
 
 export default function BrowsePage() {
@@ -26,6 +28,9 @@ export default function BrowsePage() {
 
   // Category resolves from the path (/browse/Avocados) or the query (?category=Avocados)
   const category = pathCategory ? decodeURIComponent(pathCategory) : (params.get('category') ?? '');
+  const demoLots = !exportOnly && (!category || /^tomato(?:es)?$/i.test(category))
+    ? demoTomatoLots.filter(lot => (!region || lot.region === region) && (zone == null || lot.zone === zone) && matchesDemoTomato(lot, q))
+    : [];
 
   useEffect(() => { getCategories().then(setCategories).catch(() => {}); }, []);
 
@@ -119,6 +124,9 @@ export default function BrowsePage() {
                 {regions.filter(r => r.zone === z.zone).map(r => (
                   <option key={r.name} value={r.name}>{r.name}, {r.country} ({r.listingCount})</option>
                 ))}
+                {demoTomatoLots.filter(lot => lot.zone === z.zone && !regions.some(r => r.name === lot.region)).map(lot => (
+                  <option key={lot.slug} value={lot.region}>{lot.region}, {lot.country} (demo)</option>
+                ))}
               </optgroup>
             ))}
           </select>
@@ -150,7 +158,7 @@ export default function BrowsePage() {
               {category || 'Available harvests'}
               {activeOriginLabel && <span className="browse-subtitle"> · {activeOriginLabel}</span>}
             </h1>
-            {!loading && <p className="browse-count">{items.length.toLocaleString()} listings found</p>}
+            {!loading && !error && <p className="browse-count">{items.length.toLocaleString()} live listings{demoLots.length > 0 && ` · ${demoLots.length} demo lots`}</p>}
           </div>
           {category && (
             <button className="btn btn-outline btn-sm" onClick={() => applyCategory('')}>✕ Clear category</button>
@@ -169,7 +177,7 @@ export default function BrowsePage() {
 
         {loading && <div className="spinner" />}
         {error && <div className="alert alert-error">{error}</div>}
-        {!loading && !error && items.length === 0 && (
+        {!loading && !error && items.length === 0 && demoLots.length === 0 && (
           <div className="browse-empty">
             <div style={{ fontSize: 48 }}>🔍</div>
             <h3>No harvests match this search</h3>
@@ -182,6 +190,7 @@ export default function BrowsePage() {
             {items.map(item => <ProduceCard key={item.id} item={item} />)}
           </div>
         )}
+        <DemoTomatoSection lots={demoLots} />
       </main>
     </div>
   );

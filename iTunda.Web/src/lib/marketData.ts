@@ -1,12 +1,17 @@
 import { getCommodities } from '../services/api';
 import type { CommodityDto, PriceHistory } from '../types';
 import { seededRand } from './trading';
+import { demoTomatoLots } from './demoTomatoes';
+
+const tomatoBenchmarks = demoTomatoLots.filter(lot => lot.currency === 'KES')
+  .map(lot => lot.priceReference.price).sort((a, b) => a - b);
+const tomatoAnchor = tomatoBenchmarks[Math.floor(tomatoBenchmarks.length / 2)];
 
 // Illustrative KES/kg anchors for the simulator. These are independent of seller listings.
 const samplePrices = [
   ['Avocados', 148, 2.4], ['Macadamia Nuts', 225, -1.2], ['French Beans', 104, 1.6],
   ['Tea', 55, -2.1], ['Passion Fruit', 127, 3.1], ['Mangoes', 94, -0.9],
-  ['Bananas', 66, 1.3], ['Tomatoes', 88, -3.2], ['Onions', 96, 2.7], ['Maize', 50, -1.5],
+  ['Bananas', 66, 1.3], ['Tomatoes', tomatoAnchor, -3.2], ['Onions', 96, 2.7], ['Maize', 50, -1.5],
 ] as const;
 
 const sampleCommodities: CommodityDto[] = samplePrices.map(([category, avgPrice, changePct]) => ({

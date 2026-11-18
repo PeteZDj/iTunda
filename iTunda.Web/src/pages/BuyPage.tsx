@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { getCommodities, getBuyOrders, getProduce, getPriceHistory } from '../services/api';
+import { getBuyOrders, getProduce, getPriceHistory } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { flagUrl } from '../lib/geo';
 import { categoryIcon } from '../lib/categories';
 import TradeTicket from '../components/TradeTicket';
 import BuyPanel from '../components/BuyPanel';
 import PriceChart from '../components/PriceChart';
-import type { CommodityDto, BuyOrderResponse, ProduceResponse, PriceHistory, OrderSide } from '../types';
+import { DemoTomatoSection } from '../components/TomatoDemo';
+import { demoTomatoLots } from '../lib/demoTomatoes';
+import { getMarketOverview, sampleHistory } from '../lib/marketData';
+import type { BuyOrderResponse, ProduceResponse, PriceHistory, OrderSide } from '../types';
 import './BuyPage.css';
 
 const RANGES: { id: string; label: string; long: string }[] = [
@@ -30,8 +33,12 @@ const KIND_LABEL: Record<string, string> = { Spot: 'SPOT', Limit: 'LIMIT', Futur
 export default function BuyPage() {
   const [params, setParams] = useSearchParams();
   const { format } = useCurrency();
-  const [commodities, setCommodities] = useState<CommodityDto[]>([]);
-  const [selected, setSelected] = useState<string>(params.get('c') || 'Avocados');
+  const [market, setMarket] = useState<Awaited<ReturnType<typeof getMarketOverview>> | null>(null);
+  const commodities = market?.commodities ?? [];
+  const selected = params.get('c') || 'Tomatoes';
+  const active = commodities.find(c => c.category === selected);
+  const samplePrices = market?.sampleCategories.has(selected) ?? false;
+  const isTomato = selected === 'Tomatoes';
   const [offers, setOffers] = useState<ProduceResponse[]>([]);
   const [orders, setOrders] = useState<BuyOrderResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,28 +46,37 @@ export default function BuyPage() {
   const [showTicket, setShowTicket] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [range, setRange] = useState('1M');
-  const [history, setHistory] = useState<PriceHistory | null>(null);
-  const [histLoading, setHistLoading] = useState(true);
+  const [loadedHistory, setHistory] = useState<PriceHistory | null>(null);
+  const history = loadedHistory?.category === selected && loadedHistory.range === range ? loadedHistory : null;
 
-  useEffect(() => { getCommodities().then(setCommodities).catch(() => {}); }, []);
-
-  useEffect(() => {
-    setHistLoading(true);
-    getPriceHistory(selected, range).then(setHistory).catch(() => setHistory(null)).finally(() => setHistLoading(false));
-  }, [selected, range]);
-
-  const selectCommodity = (c: string) => { setSelected(c); setParams({ c }, { replace: true }); };
-
-  useEffect(() => { const c = params.get('c'); if (c && c !== selected) setSelected(c); }, [params]); // eslint-disable-line
+  useEffect(() => { getMarketOverview().then(setMarket); }, []);
 
   useEffect(() => {
+    if (!active) return;
+    let current = true;
+    const fallback = () => sampleHistory(active, range);
+    const request = samplePrices ? Promise.resolve(fallback()) : getPriceHistory(selected, range).catch(fallback);
+    request.then(result => { if (current) setHistory(result); });
+    return () => { current = false; };
+  }, [active, range, samplePrices, selected]);
+
+  const selectCommodity = (c: string) => { setShowTicket(false); setParams({ c }, { replace: true }); };
+
+  useEffect(() => {
+    let current = true;
     setLoading(true);
+    setOffers([]);
+    setOrders([]);
     Promise.all([getProduce({ category: selected }), getBuyOrders({ commodity: selected })])
-      .then(([p, b]) => { setOffers([...p].sort((a, z) => a.price - z.price).slice(0, 16)); setOrders(b); })
-      .catch(() => {}).finally(() => setLoading(false));
+      .then(([p, b]) => {
+        if (!current) return;
+        setOffers([...p].sort((a, z) => a.price - z.price).slice(0, 16));
+        setOrders(b);
+      })
+      .catch(() => {}).finally(() => { if (current) setLoading(false); });
+    return () => { current = false; };
   }, [selected, reloadKey]);
 
-  const active = useMemo(() => commodities.find(c => c.category === selected), [commodities, selected]);
   const sellOrders = orders.filter(o => o.side === 'Sell').sort((a, z) => a.targetPrice - z.targetPrice);
   const bids = orders.filter(o => o.side === 'Buy').sort((a, z) => z.targetPrice - a.targetPrice);
   const unit = active?.unit ?? offers[0]?.unit ?? 'kg';
@@ -76,19 +92,21 @@ export default function BuyPage() {
             Pick a commodity, choose a farmer’s offer and buy the real produce — by the kilo, basket,
             crate or bunch — with local or international delivery scheduled for a time that suits you.
           </p>
-          <Link to="/market" className="mk-hero-link">⇅ Prefer the pro trading terminal? Open Market →</Link>
+          <Link to={`/market?c=${encodeURIComponent(selected)}`} className="mk-hero-link">⇅ Prefer the pro trading terminal? Open Market →</Link>
+          {isTomato && <a href="#buy-price-trend" className="mk-hero-link">See the price trend ↓</a>}
         </div>
       </div>
 
       <div className="page-container mk-body">
+        {isTomato && offers.length === 0 && <DemoTomatoSection lots={demoTomatoLots} />}
         {/* Price trends + timeframe */}
-        <div className="mk-trends card">
+        <div className="mk-trends card" id="buy-price-trend">
           <div className="mk-trends-head">
             <div className="mk-trends-title-wrap">
               <span className="mk-trends-emoji">{categoryIcon(selected)}</span>
               <div>
                 <h2 className="mk-trends-title">{selected} price trend</h2>
-                <span className="mk-trends-sub">Average farm-gate price per {history?.unit ?? unit}</span>
+                <span className="mk-trends-sub">{samplePrices ? 'Simulated prices' : 'Simulated history from listing averages'} per {history?.unit ?? unit}{samplePrices && isTomato && ' · anchored to the median of five dated Kenyan market observations'}</span>
               </div>
             </div>
             <div className="mk-range-tabs">
@@ -114,7 +132,7 @@ export default function BuyPage() {
           )}
 
           <div className="mk-trends-chart">
-            {histLoading ? <div className="spinner" /> : history
+            {(!market || (active && !history)) ? <div className="spinner" /> : history
               ? <PriceChart points={history.points} unit={history.unit} format={format} up={history.changePct >= 0} />
               : <div className="pchart-empty">No price history for {selected}.</div>}
           </div>
@@ -127,7 +145,7 @@ export default function BuyPage() {
             return (
               <button key={c.category} className={`mk-quote ${selected === c.category ? 'active' : ''}`} onClick={() => selectCommodity(c.category)}>
                 <div className="mk-quote-head">
-                  <img className="mk-quote-icon" src={c.iconUrl} alt="" />
+                  {c.iconUrl ? <img className="mk-quote-icon" src={c.iconUrl} alt="" /> : <span aria-hidden="true">{categoryIcon(c.category)}</span>}
                   <span className="mk-quote-name">{c.category}</span>
                 </div>
                 <div className="mk-quote-price">{format(c.avgPrice)}<span>/{c.unit}</span></div>
@@ -144,7 +162,7 @@ export default function BuyPage() {
               <span className="mk-summary-emoji">{categoryIcon(active.category)}</span>
               <div>
                 <h2>{active.category}</h2>
-                <span className="mk-summary-listings">{active.listings.toLocaleString()} offers · {bids.length} bids · {sellOrders.length} sell orders</span>
+                <span className="mk-summary-listings">{samplePrices ? 'Sample quote' : `${active.listings.toLocaleString()} offers · ${bids.length} bids · ${sellOrders.length} sell orders`}</span>
               </div>
             </div>
             <div className="mk-summary-stats">
@@ -153,18 +171,19 @@ export default function BuyPage() {
               <div><span className="mk-stat-l">High</span><span className="mk-stat-v">{format(active.high)}</span></div>
               <div><span className="mk-stat-l">Unit</span><span className="mk-stat-v">{active.unit}</span></div>
             </div>
-            <div className="mk-summary-actions">
+            {!samplePrices && <div className="mk-summary-actions">
               <button className="btn btn-sell btn-sm" onClick={() => openTicket('Sell')}>SELL</button>
               <button className="btn btn-outline btn-sm" onClick={() => openTicket('Buy')}>Limit / Futures</button>
-            </div>
+            </div>}
           </div>
         )}
 
         {/* Primary buy flow — buy the real produce with delivery */}
         <BuyPanel commodity={selected} offers={offers} onPlaced={() => setReloadKey(k => k + 1)} />
+        {isTomato && offers.length > 0 && <DemoTomatoSection lots={demoTomatoLots} />}
 
         {/* Advanced order-book ticket (sell offers, limit, futures, puts) */}
-        {showTicket && active && (
+        {showTicket && active && !samplePrices && (
           <div className="mk-ticket-wrap">
             <div className="mk-ticket-close">
               <span className="mk-ticket-head-label">Advanced order · posts to the exchange book</span>

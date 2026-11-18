@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { getFarmers } from '../services/api';
 import { flagUrl } from '../lib/geo';
 import type { FarmerResponse } from '../types';
+import { DemoGrowerSection } from '../components/TomatoDemo';
+import { demoTomatoLots, matchesDemoTomato } from '../lib/demoTomatoes';
 import './FarmersPage.css';
 
 type SortKey = 'rating' | 'orders' | 'acres';
@@ -27,7 +29,7 @@ export default function FarmersPage() {
   }, []);
 
   const countries = useMemo(
-    () => Array.from(new Set(farmers.map(f => f.country).filter(Boolean))).sort() as string[],
+    () => Array.from(new Set([...farmers.map(f => f.country), ...demoTomatoLots.map(lot => lot.country)].filter(Boolean))).sort() as string[],
     [farmers]);
 
   const stats = useMemo(() => ({
@@ -90,7 +92,7 @@ export default function FarmersPage() {
         {!loading && loadFailed && <div className="alert alert-error">Grower profiles couldn’t load. Try again in a moment.</div>}
         {!loading && !loadFailed && (
           <>
-            <div className="fp-count">{filtered.length} farm{filtered.length === 1 ? '' : 's'}</div>
+            <div className="fp-count">{filtered.length} grower profile{filtered.length === 1 ? '' : 's'}</div>
             <div className="fp-grid">
               {filtered.map(f => <FarmerCard key={f.id} farmer={f} />)}
             </div>
@@ -100,6 +102,9 @@ export default function FarmersPage() {
             </div>}
           </>
         )}
+      </div>
+      <div className="page-container">
+        <DemoGrowerSection lots={exportOnly ? [] : demoTomatoLots.filter(lot => (!country || lot.country === country) && matchesDemoTomato(lot, search))} />
       </div>
     </div>
   );
