@@ -56,4 +56,6 @@ public record CreateProduceRequest(
     double? FarmLongitude = null,
     List<string>? Images = null,
     bool IsDraft = false,
-    string? DeliveryScope = null);
+    string? DeliveryScope = null,
+    string? OriginLabel = null,
+    string? SellerPhone = null);

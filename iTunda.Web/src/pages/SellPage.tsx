@@ -13,9 +13,10 @@ const CATEGORIES = [
   'Passion Fruit','Mangoes','Bananas','Tomatoes','Onions','Capsicum & Peppers','Roses',
   'Coffee','Apples','Pineapples','Oranges','Grapes','Lemons & Limes','Strawberries',
   'Cashew Nuts','Cocoa','Vanilla','Ginger','Green Chillies','Sweet Potatoes',
+  'Leafy Greens','Maize','Animal Feed','Other Crops',
 ];
 
-const UNITS = ['kg', 'bunch', 'stem', 'tonne', 'crate', 'punnet', 'box'];
+const UNITS = ['kg', 'bunch', 'stem', 'tonne', 'crate', 'punnet', 'box', 'bag', 'bale', 'piece'];
 type Scope = 'Local' | 'Export' | 'Both';
 const PENDING_KEY = 'itunda_pending_listing';
 
@@ -34,6 +35,7 @@ interface Loc { lat: number | null; lng: number | null; label: string; }
 
 interface PendingListing {
   form: FormState; images: string[]; loc: Loc; scope: Scope; sellerName: string; asDraft: boolean; editId: number | null;
+  sellerPhone?: string;
 }
 
 export default function SellPage() {
@@ -47,6 +49,7 @@ export default function SellPage() {
   const [loc, setLoc] = useState<Loc>({ lat: null, lng: null, label: '' });
   const [scope, setScope] = useState<Scope>('Local');
   const [sellerName, setSellerName] = useState(authName ?? '');
+  const [sellerPhone, setSellerPhone] = useState('');
 
   const [imgBusy, setImgBusy] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -73,6 +76,7 @@ export default function SellPage() {
       });
       setImages(p.gallery?.length ? p.gallery.filter(g => g.startsWith('data:') || g.startsWith('http')) : []);
       setScope((p.deliveryScope as Scope) || 'Local');
+      setSellerPhone(p.farmerPhone ?? '');
       if (p.farmLatitude != null && p.farmLongitude != null)
         setLoc({ lat: p.farmLatitude, lng: p.farmLongitude, label: [p.town, p.county, p.country].filter(Boolean).join(', ') });
     }).catch(() => setErr('Could not load this listing for editing.'));
@@ -88,6 +92,7 @@ export default function SellPage() {
       const p: PendingListing = JSON.parse(raw);
       setForm(p.form); setImages(p.images || []); setLoc(p.loc); setScope(p.scope);
       setSellerName(p.sellerName || authName || '');
+      setSellerPhone(p.sellerPhone ?? '');
       if (isLoggedIn) {
         localStorage.removeItem(PENDING_KEY);
         setNotice('Welcome back! Your listing details are ready — review and publish below.');
@@ -126,6 +131,8 @@ export default function SellPage() {
     images,
     isDraft: asDraft,
     deliveryScope: scope,
+    originLabel: loc.label || undefined,
+    sellerPhone: sellerPhone.trim() || (editId !== null ? '' : undefined),
   });
 
   const validate = (asDraft: boolean): string | null => {
@@ -135,8 +142,12 @@ export default function SellPage() {
     if (!(parseFloat(form.price) > 0)) return 'Enter a price.';
     if (!(parseFloat(form.quantity) > 0)) return 'Enter the available quantity.';
     if (images.length === 0) return 'Add at least one photo of your produce.';
-    if (!form.plantingDate) return 'Add the planting date.';
     if (!form.expiryDate) return 'Add the best-before date.';
+    const today = new Date(Date.now() + 3 * 3600_000).toISOString().slice(0, 10);
+    if (form.expiryDate < today) return 'Add a best-before date of today or later.';
+    if (form.availableFrom > form.expiryDate || form.harvestDate > form.expiryDate)
+      return 'Harvest and availability dates must be on or before the best-before date.';
+    if (form.harvestDate > (form.availableFrom || today)) return 'Set availability on or after the harvest date.';
     if (loc.lat == null || loc.lng == null) return 'Set your farm location on the map.';
     return null;
   };
@@ -148,7 +159,7 @@ export default function SellPage() {
 
     // Gate: filling is free, but publishing/saving requires an account.
     if (!isLoggedIn) {
-      const pending: PendingListing = { form, images, loc, scope, sellerName, asDraft, editId };
+      const pending: PendingListing = { form, images, loc, scope, sellerName, sellerPhone, asDraft, editId };
       try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); }
       catch { /* images may exceed quota; continue without persisting */ }
       const qs = new URLSearchParams({ next: '/sell' });
@@ -184,13 +195,13 @@ export default function SellPage() {
           <p>
             {done.draft
               ? 'We saved this as a draft. Finish the details and publish it any time from your account.'
-              : 'Buyers across the exchange can now find and order your produce.'}
+              : 'Share the listing with buyers. It appears in available harvests on the date you chose.'}
           </p>
           <div className="sell-done-actions">
             {!done.draft && done.id != null && (
               <Link to={`/produce/${done.id}`} className="btn btn-primary">View my listing →</Link>
             )}
-            <Link to="/account" className="btn btn-outline">Manage my ads</Link>
+            <Link to="/dashboard" className="btn btn-outline">Manage listings and orders</Link>
             <button className="btn btn-outline" onClick={() => { setDone(null); setForm(EMPTY); setImages([]); setLoc({ lat: null, lng: null, label: '' }); setScope('Local'); }}>
               Post another
             </button>
@@ -204,9 +215,9 @@ export default function SellPage() {
     <div className="sell-page">
       <header className="sell-head">
         <span className="sell-kicker">＋ {editId != null ? 'Edit listing' : 'Sell on iTunda'}</span>
-        <h1>{editId != null ? 'Update your produce listing' : 'List your produce to the world'}</h1>
+        <h1>{editId != null ? 'Update your produce listing' : 'Post your harvest'}</h1>
         <p>
-          Fill in your produce below — no account needed to start.{' '}
+          List crops or animal feed in the units you sell.{' '}
           {!isLoggedIn && <strong>You'll create a free account (or sign in) to publish at the end.</strong>}
         </p>
       </header>
@@ -215,6 +226,10 @@ export default function SellPage() {
       {err && <div className="alert alert-error sell-alert">{err}</div>}
 
       <div className="sell-form card">
+        <div className="field-group">
+          <label className="field-label" htmlFor="seller-public-phone">Buyer contact number <span className="sell-hint">(optional, shown on your public listings)</span></label>
+          <input id="seller-public-phone" type="tel" className="input" value={sellerPhone} onChange={e => setSellerPhone(e.target.value)} placeholder="+254…" maxLength={40} />
+        </div>
         {/* Photos */}
         <div className="field-group">
           <label className="field-label">Produce photos <span className="sell-hint">— take a picture or upload (up to 6)</span></label>

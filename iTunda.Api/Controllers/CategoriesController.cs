@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using iTunda.Api.Data;
+using iTunda.Api.Services;
 
 namespace iTunda.Api.Controllers;
 
@@ -13,7 +14,8 @@ public class CategoriesController : ControllerBase
         "Avocados", "Macadamia Nuts", "French Beans", "Tea", "Peas & Mange Tout",
         "Passion Fruit", "Mangoes", "Bananas", "Tomatoes", "Onions", "Capsicum & Peppers", "Roses",
         "Coffee", "Apples", "Pineapples", "Oranges", "Grapes", "Lemons & Limes", "Strawberries",
-        "Cashew Nuts", "Cocoa", "Vanilla", "Ginger", "Green Chillies", "Sweet Potatoes"
+        "Cashew Nuts", "Cocoa", "Vanilla", "Ginger", "Green Chillies", "Sweet Potatoes",
+        "Leafy Greens", "Maize", "Animal Feed", "Other Crops"
     };
 
     private readonly ItundaDbContext _db;
@@ -26,12 +28,10 @@ public class CategoriesController : ControllerBase
     [HttpGet("{category}/stats")]
     public async Task<ActionResult<object>> GetStats(string category)
     {
-        var listings = await _db.Produce
-            .Where(p => p.Category == category && p.IsActive)
-            .CountAsync();
+        var available = _db.Produce.Marketable(DateTime.UtcNow).Where(p => p.Category == category);
+        var listings = await available.CountAsync();
 
-        var farmers = await _db.Produce
-            .Where(p => p.Category == category && p.IsActive)
+        var farmers = await available
             .Select(p => p.FarmerProfileId)
             .Distinct()
             .CountAsync();

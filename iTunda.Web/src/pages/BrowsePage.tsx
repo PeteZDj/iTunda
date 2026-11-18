@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { getProduce, getCategories } from '../services/api';
 import { useRegion } from '../context/RegionContext';
 import { flagUrl, ZONES } from '../lib/geo';
@@ -43,7 +43,7 @@ export default function BrowsePage() {
       });
       setItems(data);
     } catch {
-      setError('Failed to load listings. Is the API running?');
+      setError('Couldn’t load harvests right now. Try again in a moment.');
     } finally { setLoading(false); }
   }, [q, category, region, zone, exportOnly, includeFuture]);
 
@@ -147,7 +147,7 @@ export default function BrowsePage() {
         <div className="browse-header">
           <div>
             <h1 className="browse-title">
-              {category || 'All Produce'}
+              {category || 'Available harvests'}
               {activeOriginLabel && <span className="browse-subtitle"> · {activeOriginLabel}</span>}
             </h1>
             {!loading && <p className="browse-count">{items.length.toLocaleString()} listings found</p>}
@@ -172,8 +172,9 @@ export default function BrowsePage() {
         {!loading && !error && items.length === 0 && (
           <div className="browse-empty">
             <div style={{ fontSize: 48 }}>🔍</div>
-            <h3>No listings found</h3>
-            <p>Try clearing some filters or a different search term.</p>
+            <h3>No harvests match this search</h3>
+            <p>Try clearing filters, or post a batch if you have crops or feed to sell.</p>
+            <Link to="/sell" className="btn btn-outline btn-sm">Post a harvest</Link>
           </div>
         )}
         {!loading && (

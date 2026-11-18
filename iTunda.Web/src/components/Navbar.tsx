@@ -30,24 +30,18 @@ export default function Navbar() {
         </button>
 
         <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-          <Link to="/browse" className={active('/browse')} onClick={() => setMenuOpen(false)}>Browse</Link>
-          <Link to="/market" className={active('/market')} onClick={() => setMenuOpen(false)}>Market</Link>
-          <Link to="/delivery" className={active('/delivery')} onClick={() => setMenuOpen(false)}>Delivery</Link>
-          <Link to="/farmers" className={active('/farmers')} onClick={() => setMenuOpen(false)}>Farmers</Link>
+          <Link to="/browse" className={active('/browse')} onClick={() => setMenuOpen(false)}>Buy produce</Link>
+          <Link to="/farmers" className={active('/farmers')} onClick={() => setMenuOpen(false)}>Find growers</Link>
           <Link to="/downloads" className="nav-dl" onClick={() => setMenuOpen(false)}>⬇ Get the App</Link>
 
           <RegionSelector />
 
-          <Link to="/buy" className="nav-cta nav-cta-buy" onClick={() => setMenuOpen(false)}>🛒 Buy</Link>
-          <Link to={sellHref} className="nav-cta nav-cta-ghost" onClick={() => setMenuOpen(false)}>＋ Sell</Link>
-          <Link to="/market" className="nav-cta nav-cta-trade" onClick={() => setMenuOpen(false)}>⇅ Trade</Link>
+          <Link to={sellHref} className="nav-cta nav-cta-buy" onClick={() => setMenuOpen(false)}>Post a harvest</Link>
 
           {isLoggedIn ? (
             <>
               <Link to="/orders" className={active('/orders')} onClick={() => setMenuOpen(false)}>Orders</Link>
-              {role === 'Farmer' && (
-                <Link to="/dashboard" className={active('/dashboard')} onClick={() => setMenuOpen(false)}>Dashboard</Link>
-              )}
+              <Link to="/dashboard" className={active('/dashboard')} onClick={() => setMenuOpen(false)}>Seller dashboard</Link>
               <div className="nav-user-menu">
                 <button className="nav-avatar">
                   {image ? <img src={image} alt={name ?? 'me'} /> : (name?.[0]?.toUpperCase() ?? '?')}

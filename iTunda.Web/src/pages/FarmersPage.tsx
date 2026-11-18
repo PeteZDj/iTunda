@@ -16,13 +16,14 @@ function farmPhoto(f: FarmerResponse, i = 0): string {
 export default function FarmersPage() {
   const [farmers, setFarmers] = useState<FarmerResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState('');
   const [exportOnly, setExportOnly] = useState(false);
   const [country, setCountry] = useState('');
   const [sort, setSort] = useState<SortKey>('rating');
 
   useEffect(() => {
-    getFarmers().then(setFarmers).catch(() => {}).finally(() => setLoading(false));
+    getFarmers().then(setFarmers).catch(() => setLoadFailed(true)).finally(() => setLoading(false));
   }, []);
 
   const countries = useMemo(
@@ -58,16 +59,15 @@ export default function FarmersPage() {
         <div className="page-container">
           <h1 className="fp-title">Meet the Growers</h1>
           <p className="fp-sub">
-            A verified network of {stats.total} farms across {countries.length} countries — from smallholder
-            co-ops to certified exporters. Every profile shows real farm data, produce and location.
+            See who grows your crops or feed. Open a grower’s profile to see their available harvests and return when they post another batch.
           </p>
-          <div className="fp-stats">
+          {stats.total > 0 && <div className="fp-stats">
             <div><b>{stats.total}</b><span>Farms</span></div>
             <div><b>{stats.exporters}</b><span>Exporters</span></div>
             <div><b>{stats.acres.toLocaleString()}</b><span>Acres farmed</span></div>
             <div><b>{stats.orders.toLocaleString()}</b><span>Orders fulfilled</span></div>
             <div><b>★ {stats.rating.toFixed(1)}</b><span>Avg rating</span></div>
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -87,13 +87,17 @@ export default function FarmersPage() {
         </div>
 
         {loading && <div className="spinner" />}
-        {!loading && (
+        {!loading && loadFailed && <div className="alert alert-error">Grower profiles couldn’t load. Try again in a moment.</div>}
+        {!loading && !loadFailed && (
           <>
             <div className="fp-count">{filtered.length} farm{filtered.length === 1 ? '' : 's'}</div>
             <div className="fp-grid">
               {filtered.map(f => <FarmerCard key={f.id} farmer={f} />)}
             </div>
-            {filtered.length === 0 && <div className="fp-empty">No farms match your filters.</div>}
+            {filtered.length === 0 && <div className="fp-empty">
+              <p>{farmers.length ? 'No growers match your filters.' : 'Grower profiles appear here after their first published batch.'}</p>
+              <Link to="/sell" className="btn btn-outline btn-sm">Post a harvest</Link>
+            </div>}
           </>
         )}
       </div>

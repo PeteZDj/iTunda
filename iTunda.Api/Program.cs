@@ -70,7 +70,8 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ItundaDbContext>();
     db.Database.EnsureCreated();
-    await SeedData.SeedAsync(db);
+    if (builder.Configuration.GetValue<bool>("DemoData:Enabled"))
+        await SeedData.SeedAsync(db);
 }
 
 if (app.Environment.IsDevelopment())

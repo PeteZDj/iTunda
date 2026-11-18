@@ -31,7 +31,7 @@ public class CommoditiesController : ControllerBase
         // SQLite can't translate decimal aggregates, so pull the rows and
         // compute the stats in memory.
         var rows = await _db.Produce
-            .Where(p => p.IsActive)
+            .Marketable(DateTime.UtcNow)
             .Select(p => new { p.Category, p.Unit, p.Price })
             .ToListAsync();
 
@@ -66,7 +66,8 @@ public class CommoditiesController : ControllerBase
     public async Task<ActionResult<PriceHistoryDto>> GetHistory(string category, [FromQuery] string range = "1M")
     {
         var rows = await _db.Produce
-            .Where(p => p.IsActive && p.Category == category)
+            .Marketable(DateTime.UtcNow)
+            .Where(p => p.Category == category)
             .Select(p => new { p.Unit, p.Price })
             .ToListAsync();
 

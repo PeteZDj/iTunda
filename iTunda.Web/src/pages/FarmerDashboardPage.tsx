@@ -7,7 +7,7 @@ import type { FarmerResponse, ProduceResponse, OrderResponse } from '../types';
 import './FarmerDashboardPage.css';
 
 export default function FarmerDashboardPage() {
-  const { isLoggedIn, role } = useAuth();
+  const { isLoggedIn } = useAuth();
   const { format } = useCurrency();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<FarmerResponse | null>(null);
@@ -16,13 +16,14 @@ export default function FarmerDashboardPage() {
   const [tab, setTab] = useState<'listings' | 'orders'>('listings');
   const [loading, setLoading] = useState(true);
 
-  if (!isLoggedIn || role !== 'Farmer') return <Navigate to="/login?next=/dashboard" replace />;
-
   useEffect(() => {
+    if (!isLoggedIn) return;
     Promise.all([getMyFarmerProfile().catch(() => null), getFarmerOrders().catch(() => []), getMyProduce().catch(() => [])])
       .then(([p, o, mine]) => { setProfile(p); setOrders(o); setListings(mine); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [isLoggedIn]);
+
+  if (!isLoggedIn) return <Navigate to="/login?next=/dashboard" replace />;
 
   const STATUS_COLORS: Record<string, string> = {
     Pending: 'badge-gray', Confirmed: 'badge-blue',

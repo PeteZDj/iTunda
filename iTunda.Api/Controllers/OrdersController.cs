@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using iTunda.Api.Data;
 using iTunda.Api.Dtos;
 using iTunda.Api.Models;
+using iTunda.Api.Services;
 
 namespace iTunda.Api.Controllers;
 
@@ -20,10 +21,14 @@ public class OrdersController : ControllerBase
         _db = db;
     }
 
-    private static OrderResponse ToResponse(Order o) => new(
-        o.Id, o.Status, o.DeliveryAddress, o.DeliveryScope, o.TotalAmount, o.CreatedAt,
-        o.Items.Select(i => new OrderItemResponse(i.ProduceId, i.Produce!.Name, i.Quantity, i.UnitPriceAtOrder)).ToList(),
-        o.RequestedDeliveryAt, o.Packaging);
+    private static OrderResponse ToResponse(Order order, int? sellerId = null)
+    {
+        var items = order.Items.Where(i => sellerId is null || i.Produce!.FarmerProfileId == sellerId)
+            .Select(i => new OrderItemResponse(i.ProduceId, i.Produce!.Name, i.Quantity, i.UnitPriceAtOrder)).ToList();
+        var total = sellerId is null ? order.TotalAmount : items.Sum(i => i.UnitPriceAtOrder * (decimal)i.Quantity);
+        return new(order.Id, order.Status, order.DeliveryAddress, order.DeliveryScope, total, order.CreatedAt,
+            items, order.RequestedDeliveryAt, sellerId is null || items.Count == order.Items.Count ? order.Packaging : null);
+    }
 
     [HttpPost]
     [Authorize]
@@ -31,8 +36,13 @@ public class OrdersController : ControllerBase
     {
         if (request.Items is null || request.Items.Count == 0)
             return BadRequest("An order must contain at least one item.");
+        if (request.Items.Any(line => !double.IsFinite(line.Quantity) || line.Quantity <= 0))
+            return BadRequest("Enter a positive quantity for every item.");
 
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var now = DateTime.UtcNow;
+        if (request.RequestedDeliveryAt is { } requested && requested.ToUniversalTime() <= now)
+            return BadRequest("Choose a delivery time in the future.");
 
         var order = new Order
         {
@@ -46,14 +56,25 @@ public class OrdersController : ControllerBase
         };
 
         decimal total = 0;
+        await using var transaction = await _db.Database.BeginTransactionAsync();
         foreach (var line in request.Items)
         {
-            var produce = await _db.Produce.FindAsync(line.ProduceId);
-            if (produce is null) return BadRequest($"Produce {line.ProduceId} not found.");
-            if (produce.QuantityAvailable < line.Quantity)
-                return BadRequest($"Not enough '{produce.Name}' available.");
+            var listing = _db.Produce.Marketable(now).Where(p => p.Id == line.ProduceId
+                && p.FarmerProfile!.UserId != userId
+                && (order.DeliveryScope == "Export" ? p.DeliveryScope != "Local" : p.DeliveryScope != "Export"));
+            if (request.RequestedDeliveryAt is { } delivery)
+            {
+                var deliveryDay = ListingAvailability.MarketDay(delivery.ToUniversalTime());
+                listing = listing.Where(p => p.ExpiryDate >= deliveryDay);
+            }
+            var produce = await listing.AsNoTracking().FirstOrDefaultAsync();
+            if (produce is null) return BadRequest("This listing is unavailable for the requested delivery date.");
 
-            produce.QuantityAvailable -= line.Quantity;
+            var updated = await listing.Where(p => p.QuantityAvailable >= line.Quantity)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.QuantityAvailable,
+                    p => p.QuantityAvailable - line.Quantity));
+            if (updated == 0) return BadRequest($"Not enough '{produce.Name}' available.");
+
             var lineTotal = produce.Price * (decimal)line.Quantity;
             total += lineTotal;
 
@@ -69,6 +90,7 @@ public class OrdersController : ControllerBase
 
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
 
         await _db.Entry(order).Collection(o => o.Items).Query().Include(i => i.Produce).LoadAsync();
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, ToResponse(order));
@@ -82,10 +104,10 @@ public class OrdersController : ControllerBase
         if (order is null) return NotFound();
 
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var role = User.FindFirstValue(ClaimTypes.Role);
-        if (role == nameof(UserRole.Buyer) && order.BuyerUserId != userId) return Forbid();
-
-        return Ok(ToResponse(order));
+        if (order.BuyerUserId == userId) return Ok(ToResponse(order));
+        var seller = await _db.FarmerProfiles.FirstOrDefaultAsync(f => f.UserId == userId);
+        if (seller is null || !order.Items.Any(i => i.Produce!.FarmerProfileId == seller.Id)) return Forbid();
+        return Ok(ToResponse(order, seller.Id));
     }
 
     [HttpGet("mine")]
@@ -98,11 +120,10 @@ public class OrdersController : ControllerBase
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
-        return Ok(orders.Select(ToResponse));
+        return Ok(orders.Select(order => ToResponse(order)));
     }
 
     [HttpGet("farmer")]
-    [Authorize(Roles = nameof(UserRole.Farmer))]
     public async Task<ActionResult<List<OrderResponse>>> GetForFarmer()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -114,6 +135,6 @@ public class OrdersController : ControllerBase
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
 
-        return Ok(orders.Select(ToResponse));
+        return Ok(orders.Select(order => ToResponse(order, farmerProfile.Id)));
     }
 }

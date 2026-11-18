@@ -30,7 +30,9 @@ public class FarmersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<FarmerResponse>>> GetAll([FromQuery] string? county)
     {
-        var query = _db.FarmerProfiles.Include(f => f.User).AsQueryable();
+        var visibleListings = _db.Produce.Where(p => p.IsActive && !p.IsDraft && p.ImagePath != null && p.ImagePath != "");
+        var query = _db.FarmerProfiles.Include(f => f.User)
+            .Where(f => visibleListings.Any(p => p.FarmerProfileId == f.Id));
         if (!string.IsNullOrWhiteSpace(county))
             query = query.Where(f => f.LocationCounty == county);
         var farmers = await query.ToListAsync();
@@ -38,7 +40,7 @@ public class FarmersController : ControllerBase
     }
 
     [HttpGet("me")]
-    [Authorize(Roles = nameof(UserRole.Farmer))]
+    [Authorize]
     public async Task<ActionResult<FarmerResponse>> GetMine()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -61,7 +63,8 @@ public class FarmersController : ControllerBase
     public async Task<ActionResult<FarmerResponse>> GetByKey(string key)
     {
         var farmer = await ResolveAsync(key);
-        if (farmer is null) return NotFound();
+        if (farmer is null || !await _db.Produce.AnyAsync(p => p.FarmerProfileId == farmer.Id
+            && p.IsActive && !p.IsDraft && p.ImagePath != null && p.ImagePath != "")) return NotFound();
         return Ok(ToResponse(farmer));
     }
 
@@ -73,7 +76,8 @@ public class FarmersController : ControllerBase
 
         var items = await _db.Produce
             .Include(p => p.FarmerProfile!.User)
-            .Where(p => p.FarmerProfileId == farmer.Id && p.IsActive && !p.IsDraft)
+            .Marketable(DateTime.UtcNow, includeFuture: true)
+            .Where(p => p.FarmerProfileId == farmer.Id)
             .ToListAsync();
 
         return Ok(items.Select(ToProduceResponse));

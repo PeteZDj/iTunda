@@ -67,10 +67,7 @@ public class ProduceController : ControllerBase
     {
         var query = _db.Produce
             .Include(p => p.FarmerProfile!.User)
-            .Where(p => p.IsActive && !p.IsDraft);
-
-        if (!includeFuture)
-            query = query.Where(p => p.AvailableFrom == null || p.AvailableFrom <= DateTime.UtcNow);
+            .Marketable(DateTime.UtcNow, includeFuture);
 
         if (!string.IsNullOrWhiteSpace(q))
         {
@@ -78,8 +75,10 @@ public class ProduceController : ControllerBase
             query = query.Where(p => p.Name.ToLower().Contains(qLower) || p.Category.ToLower().Contains(qLower)
                 || (p.Description != null && p.Description.ToLower().Contains(qLower))
                 || (p.FarmerProfile!.LocationCounty != null && p.FarmerProfile!.LocationCounty.ToLower().Contains(qLower))
+                || (p.FarmerProfile!.LocationTown != null && p.FarmerProfile!.LocationTown.ToLower().Contains(qLower))
                 || (p.FarmerProfile!.Region != null && p.FarmerProfile!.Region.ToLower().Contains(qLower))
-                || (p.FarmerProfile!.Country != null && p.FarmerProfile!.Country.ToLower().Contains(qLower)));
+                || (p.FarmerProfile!.Country != null && p.FarmerProfile!.Country.ToLower().Contains(qLower))
+                || (p.FarmerProfile!.FarmName != null && p.FarmerProfile!.FarmName.ToLower().Contains(qLower)));
         }
 
         if (!string.IsNullOrWhiteSpace(category))
@@ -111,9 +110,10 @@ public class ProduceController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ProduceResponse>> GetById(int id)
     {
-        var item = await _db.Produce
-            .Include(p => p.FarmerProfile!.User)
-            .FirstOrDefaultAsync(p => p.Id == id);
+        var query = _db.Produce.Include(p => p.FarmerProfile!.User).Where(p => p.Id == id);
+        var item = await query.Marketable(DateTime.UtcNow, includeFuture: true).FirstOrDefaultAsync();
+        if (item is null && int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var owner))
+            item = await query.FirstOrDefaultAsync(p => p.FarmerProfile!.UserId == owner);
 
         if (item is null) return NotFound();
         return Ok(ToResponse(item));
@@ -155,10 +155,10 @@ public class ProduceController : ControllerBase
         {
             if (images.Count == 0 && string.IsNullOrWhiteSpace(request.ImagePath))
                 return BadRequest("At least one produce photo is required.");
-            if (request.PlantingDate is null)
-                return BadRequest("Planting date is required.");
-            if (request.ExpiryDate is null)
-                return BadRequest("Best-before date is required.");
+            var dateIssue = ListingAvailability.CheckDates(request.ExpiryDate, request.AvailableFrom, request.HarvestDate, DateTime.UtcNow);
+            if (dateIssue is not null) return BadRequest(dateIssue);
+            if (request.Price <= 0 || !double.IsFinite(request.QuantityAvailable) || request.QuantityAvailable <= 0)
+                return BadRequest("Enter a positive price and available quantity.");
             if (lat is null || lng is null)
                 return BadRequest("Farm location (GPS) is required.");
         }
@@ -177,7 +177,7 @@ public class ProduceController : ControllerBase
             PlantingDate = request.PlantingDate,
             HarvestDate = request.HarvestDate,
             ExpiryDate = request.ExpiryDate,
-            AvailableFrom = request.AvailableFrom,
+            AvailableFrom = request.AvailableFrom?.Date,
             FarmLatitude = lat,
             FarmLongitude = lng,
             IsExportReady = request.IsExportReady,
@@ -187,6 +187,7 @@ public class ProduceController : ControllerBase
         };
 
         _db.Produce.Add(produce);
+        if (!request.IsDraft) SetPublicGrowerDetails(profile, request);
         await _db.SaveChangesAsync();
 
         await _db.Entry(produce).Reference(p => p.FarmerProfile).LoadAsync();
@@ -216,10 +217,11 @@ public class ProduceController : ControllerBase
         {
             if (images.Count == 0 && string.IsNullOrWhiteSpace(produce.ImagePath) && string.IsNullOrWhiteSpace(request.ImagePath))
                 return BadRequest("At least one produce photo is required.");
-            if (request.PlantingDate is null && produce.PlantingDate is null)
-                return BadRequest("Planting date is required.");
-            if (request.ExpiryDate is null && produce.ExpiryDate is null)
-                return BadRequest("Best-before date is required.");
+            var dateIssue = ListingAvailability.CheckDates(request.ExpiryDate ?? produce.ExpiryDate, request.AvailableFrom,
+                request.HarvestDate ?? produce.HarvestDate, DateTime.UtcNow);
+            if (dateIssue is not null) return BadRequest(dateIssue);
+            if (request.Price <= 0 || !double.IsFinite(request.QuantityAvailable) || request.QuantityAvailable <= 0)
+                return BadRequest("Enter a positive price and available quantity.");
             if (lat is null || lng is null)
                 return BadRequest("Farm location (GPS) is required.");
         }
@@ -235,16 +237,22 @@ public class ProduceController : ControllerBase
             produce.ImagePath = images[0];
             produce.ImagesJson = System.Text.Json.JsonSerializer.Serialize(images);
         }
+        else if (!string.IsNullOrWhiteSpace(request.ImagePath))
+        {
+            produce.ImagePath = request.ImagePath;
+            produce.ImagesJson = null;
+        }
         if (request.PlantingDate is not null) produce.PlantingDate = request.PlantingDate;
         produce.HarvestDate = request.HarvestDate ?? produce.HarvestDate;
         if (request.ExpiryDate is not null) produce.ExpiryDate = request.ExpiryDate;
-        produce.AvailableFrom = request.AvailableFrom;
+        produce.AvailableFrom = request.AvailableFrom?.Date;
         produce.FarmLatitude = lat;
         produce.FarmLongitude = lng;
         produce.IsExportReady = request.IsExportReady;
         produce.GradeQuality = request.GradeQuality;
         produce.IsDraft = request.IsDraft;
         produce.DeliveryScope = NormalizeScope(request.DeliveryScope);
+        if (!request.IsDraft) SetPublicGrowerDetails(produce.FarmerProfile, request);
 
         await _db.SaveChangesAsync();
         return Ok(ToResponse(produce));
@@ -261,7 +269,7 @@ public class ProduceController : ControllerBase
         if (produce is null) return NotFound();
         if (produce.FarmerProfile!.UserId != userId) return Forbid();
 
-        _db.Produce.Remove(produce);
+        produce.IsActive = false;
         await _db.SaveChangesAsync();
         return NoContent();
     }
@@ -272,6 +280,15 @@ public class ProduceController : ControllerBase
         "Both" => "Both",
         _ => "Local",
     };
+
+    private static void SetPublicGrowerDetails(FarmerProfile profile, CreateProduceRequest request)
+    {
+        var origin = request.OriginLabel?.Trim();
+        if (origin is { Length: > 0 } && string.IsNullOrWhiteSpace(profile.LocationTown))
+            profile.LocationTown = origin[..Math.Min(origin.Length, 160)];
+        var phone = request.SellerPhone?.Trim();
+        if (phone is not null) profile.Phone = phone[..Math.Min(phone.Length, 40)];
+    }
 
     private async Task<FarmerProfile?> GetOrCreateSellerProfile(int userId)
     {

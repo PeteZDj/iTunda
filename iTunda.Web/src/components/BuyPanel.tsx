@@ -26,18 +26,19 @@ const PACKS: Pack[] = [
 interface Props {
   commodity: string;
   offers: ProduceResponse[];
+  direct?: boolean;
   onPlaced?: () => void;
 }
 
-export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
+export default function BuyPanel({ commodity, offers, direct = false, onPlaced }: Props) {
   const { isLoggedIn } = useAuth();
   const { format } = useCurrency();
   const navigate = useNavigate();
 
   const [offerId, setOfferId] = useState<number | null>(null);
   const [packId, setPackId] = useState('kg');
-  const [count, setCount] = useState('10');
-  const [scope, setScope] = useState<'Local' | 'Export'>('Local');
+  const [count, setCount] = useState(direct ? '1' : '10');
+  const [scope, setScope] = useState<'Local' | 'Export'>(offers[0]?.deliveryScope === 'Export' ? 'Export' : 'Local');
   const [when, setWhen] = useState('');
   const [address, setAddress] = useState('');
   const [loc, setLoc] = useState<{ lat: number | null; lng: number | null }>({ lat: null, lng: null });
@@ -55,7 +56,7 @@ export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
 
   const offer = useMemo(() => offers.find(o => o.id === offerId) ?? null, [offers, offerId]);
   const baseUnit = (offer?.unit ?? 'kg').toLowerCase();
-  const isKg = baseUnit === 'kg';
+  const isKg = baseUnit === 'kg' && !direct;
   const pack = PACKS.find(p => p.id === packId) ?? PACKS[0];
 
   const countNum = Math.max(0, parseFloat(count) || 0);
@@ -84,7 +85,10 @@ export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
     if (!offer) return 'Select a farmer offer to buy.';
     if (countNum <= 0) return 'Enter how much you want to buy.';
     if (!enoughStock) return `Only ${offer.quantityAvailable.toLocaleString()} ${offer.unit} available from this farmer.`;
-    if (!when) return 'Choose a preferred delivery time.';
+    if (!when && !direct) return 'Choose a preferred delivery time.';
+    if (when && new Date(when).getTime() <= Date.now()) return 'Choose a delivery time in the future.';
+    if (when && offer.expiryDate && new Date(new Date(when).getTime() + 3 * 3600_000).toISOString().slice(0, 10) > offer.expiryDate.slice(0, 10))
+      return 'Choose a delivery date on or before the best-before date.';
     if (!address.trim()) return 'Enter or pin a delivery address.';
     return null;
   };
@@ -110,7 +114,7 @@ export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
         deliveryScope: scope,
         deliveryLat: loc.lat,
         deliveryLng: loc.lng,
-        requestedDeliveryAt: new Date(when).toISOString(),
+        requestedDeliveryAt: when ? new Date(when).toISOString() : null,
         packaging,
       });
       setConfirming(false);
@@ -122,18 +126,19 @@ export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
     } finally { setBusy(false); }
   };
 
-  const minWhen = new Date(Date.now() + 3600_000).toISOString().slice(0, 16);
+  const nextHour = new Date(Date.now() + 3600_000);
+  const minWhen = new Date(nextHour.getTime() - nextHour.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 
   if (ok) {
     return (
       <div className="buyp card">
         <div className="buyp-success">
           <div className="buyp-success-ico">🎉</div>
-          <h3>Order placed!</h3>
-          <p>Your order for <b>{packaging} of {commodity}</b> is confirmed. We’ll arrange {scope === 'Export' ? 'international' : 'local'} delivery for {when && new Date(when).toLocaleString()}.</p>
+          <h3>Order request sent</h3>
+          <p>Your request for <b>{packaging} of {commodity}</b> is pending. Confirm pickup or delivery and payment with the grower.</p>
           <div className="buyp-success-actions">
             <button className="btn btn-primary" onClick={() => navigate('/orders')}>View my orders →</button>
-            <button className="btn btn-outline" onClick={() => { setOk(false); setCount('10'); }}>Buy more</button>
+            {!direct && <button className="btn btn-outline" onClick={() => { setOk(false); setCount('10'); }}>Buy more</button>}
           </div>
         </div>
       </div>
@@ -146,7 +151,7 @@ export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
       <div className="buyp-head">
         <span className="buyp-emoji">{categoryIcon(commodity)}</span>
         <div>
-          <span className="buyp-eyebrow">You are buying</span>
+          <span className="buyp-eyebrow">{direct ? 'Order from this grower' : 'You are buying'}</span>
           <h2 className="buyp-title">{commodity}</h2>
         </div>
         <span className="buyp-badge">Fresh produce</span>
@@ -154,12 +159,12 @@ export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
 
       {offers.length === 0 ? (
         <div className="buyp-empty">
-          No live farmer offers for <b>{commodity}</b> right now. Post a buy order below and farmers will fill it.
+          No live grower offers for <b>{commodity}</b> right now.
         </div>
       ) : (
         <>
           {/* Choose the actual farmer offer */}
-          <label className="buyp-label">Choose a farmer offer</label>
+          {!direct && <><label className="buyp-label">Choose a grower offer</label>
           <div className="buyp-offer-select">
             <select className="input" value={offerId ?? ''} onChange={e => setOfferId(Number(e.target.value))}>
               {offers.map(o => (
@@ -168,7 +173,7 @@ export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
                 </option>
               ))}
             </select>
-          </div>
+          </div></>}
 
           {offer && (
             <div className="buyp-offer-card">
@@ -190,8 +195,8 @@ export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
           )}
 
           {/* Pack unit */}
-          <label className="buyp-label">Buy by the…</label>
-          {isKg ? (
+          {!direct && <label className="buyp-label">Buy by the…</label>}
+          {!direct && (isKg ? (
             <div className="buyp-packs">
               {PACKS.map(p => (
                 <button key={p.id} type="button" className={`buyp-pack ${packId === p.id ? 'active' : ''}`} onClick={() => setPackId(p.id)}>
@@ -208,7 +213,7 @@ export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
                 <span className="buyp-pack-label">{offer?.unit}</span>
               </button>
             </div>
-          )}
+          ))}
 
           {/* Quantity */}
           <div className="buyp-qty-row">
@@ -230,23 +235,23 @@ export default function BuyPanel({ commodity, offers, onPlaced }: Props) {
           {/* Delivery scope */}
           <label className="buyp-label">Delivery</label>
           <div className="buyp-scope">
-            <button type="button" className={`buyp-scope-btn ${scope === 'Local' ? 'active' : ''}`} onClick={() => setScope('Local')}>
+            {(!direct || offer?.deliveryScope !== 'Export') && <button type="button" className={`buyp-scope-btn ${scope === 'Local' ? 'active' : ''}`} onClick={() => setScope('Local')}>
               🏠 <b>Local</b><span>Within the country</span>
-            </button>
-            <button type="button" className={`buyp-scope-btn ${scope === 'Export' ? 'active' : ''}`} onClick={() => setScope('Export')}>
+            </button>}
+            {(!direct || offer?.deliveryScope !== 'Local') && <button type="button" className={`buyp-scope-btn ${scope === 'Export' ? 'active' : ''}`} onClick={() => setScope('Export')}>
               ✈ <b>International</b><span>Export / cross-border</span>
-            </button>
+            </button>}
           </div>
 
           {/* Delivery time */}
           <div className="buyp-field">
-            <label className="buyp-label">Preferred delivery time</label>
+            <label className="buyp-label">Preferred delivery time{direct ? ' (optional)' : ''}</label>
             <input className="input" type="datetime-local" min={minWhen} value={when} onChange={e => setWhen(e.target.value)} />
           </div>
 
           {/* Address */}
           <div className="buyp-field">
-            <label className="buyp-label">Delivery address</label>
+            <label className="buyp-label">{direct ? 'Delivery address or pickup location' : 'Delivery address'}</label>
             <LocationPicker
               lat={loc.lat} lng={loc.lng} label={address}
               height={190}

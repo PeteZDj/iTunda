@@ -41,7 +41,7 @@ export const updateMe = (data: UpdateMeRequest) =>
 export const getProduce = (params?: {
   q?: string; category?: string; county?: string;
   region?: string; country?: string; zone?: number;
-  exportReady?: boolean; includeFuture?: boolean;
+  exportReady?: boolean; includeFuture?: boolean; limit?: number;
 }) => client.get<ProduceResponse[]>('/produce', { params }).then(r => r.data);
 
 export const getProduceById = (id: number) =>

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { getProduceById } from '../services/api';
 import { flagUrl } from '../lib/geo';
 import { useCurrency } from '../context/CurrencyContext';
 import LeafletMap, { type MapMarker } from '../components/LeafletMap';
 import TradeTicket from '../components/TradeTicket';
+import BuyPanel from '../components/BuyPanel';
 import type { ProduceResponse, OrderKind, OrderSide } from '../types';
 import './ProduceDetailPage.css';
 
@@ -25,34 +26,43 @@ export default function ProduceDetailPage() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
+    setError('');
     getProduceById(Number(id))
       .then(p => { setItem(p); setActiveImg(0); })
       .catch(() => setError('Listing not found.'))
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="spinner" style={{ marginTop: 80 }} />;
-  if (error || !item) return <div className="alert alert-error" style={{ margin: 40 }}>{error || 'Not found'}</div>;
+  const offers = useMemo(() => item ? [item] : [], [item]);
 
-  const isScheduled = item.availableFrom && new Date(item.availableFrom) > new Date();
+  if (loading) return <div className="spinner" style={{ marginTop: 80 }} />;
+  if (error || !item) return (
+    <div className="page-container" style={{ padding: '48px 24px' }}>
+      <h1>This harvest is no longer available</h1>
+      <p>Browse other batches from growers.</p>
+      <Link to="/browse" className="btn btn-primary" style={{ marginTop: 16 }}>Browse harvests</Link>
+    </div>
+  );
+
+  const marketDay = new Date(Date.now() + 3 * 3600_000).toISOString().slice(0, 10);
+  const isScheduled = item.availableFrom && item.availableFrom.slice(0, 10) > marketDay;
+  const isAvailable = !isScheduled && !item.isDraft && item.quantityAvailable > 0
+    && item.expiryDate !== null && item.expiryDate.slice(0, 10) >= marketDay;
   const images = [item.imageUrl, ...item.gallery].filter(Boolean);
+  const origin = [item.region || item.town || item.county, item.country].filter(Boolean).join(', ');
+  const phone = item.farmerPhone?.replace(/[^+\d]/g, '');
+  const advanced = params.has('kind') || params.has('side');
 
   const initialKind = (params.get('kind') as OrderKind) || 'Spot';
   const initialSide = (params.get('side') as OrderSide) || 'Buy';
 
-  // Farm + distributor collection hub + suggested meet-up point for the map.
   const hasGeo = item.farmLatitude != null && item.farmLongitude != null;
   const flat = item.farmLatitude ?? 0;
   const flng = item.farmLongitude ?? 0;
-  const hub: [number, number] = [flat + 0.16, flng + 0.16];
-  const meet: [number, number] = [flat + 0.08, flng + 0.08];
-  const gmapsMeet = `https://www.google.com/maps/dir/?api=1&origin=${flat},${flng}&destination=${hub[0]},${hub[1]}&travelmode=driving`;
   const gmapsFarm = `https://www.google.com/maps?q=${flat},${flng}`;
 
   const markers: MapMarker[] = hasGeo ? [
-    { lat: flat, lng: flng, title: item.farmName ?? 'Farm', subtitle: `${item.region}, ${item.country}`, color: '#0e7a3e', emoji: '🌱', href: gmapsFarm },
-    { lat: meet[0], lng: meet[1], title: 'Suggested meet-up point', subtitle: 'Farm ↔ distributor handover', color: '#f4a621', emoji: '🤝', href: gmapsMeet },
-    { lat: hub[0], lng: hub[1], title: 'Regional collection hub', subtitle: 'Distributor pickup & consolidation', color: '#0a4a26', emoji: '🚚' },
+    { lat: flat, lng: flng, title: item.farmName ?? 'Farm', subtitle: origin || 'Grower-provided location', color: '#0e7a3e', emoji: '🌱', href: gmapsFarm },
   ] : [];
 
   return (
@@ -88,7 +98,7 @@ export default function ProduceDetailPage() {
               <h1 className="detail-name">{item.name}</h1>
               <div className="detail-origin">
                 <img className="pc-flag" src={flagUrl(item.countryCode)} alt="" />
-                {item.region}, {item.country} · Zone {item.zone}
+                {origin || 'See the grower’s map pin'}
               </div>
             </div>
             <div className="detail-price">
@@ -125,15 +135,11 @@ export default function ProduceDetailPage() {
           {hasGeo && (
             <div className="card" style={{ marginTop: 16 }}>
               <div className="detail-map-head">
-                <h3 className="card-section-title" style={{ margin: 0 }}>Location & meet-up point</h3>
-                <a href={gmapsMeet} target="_blank" rel="noreferrer" className="btn btn-outline btn-sm">🗺 Open route in Google Maps</a>
+                <h3 className="card-section-title" style={{ margin: 0 }}>Farm of origin</h3>
+                <a href={gmapsFarm} target="_blank" rel="noreferrer" className="btn btn-outline btn-sm">Open map</a>
               </div>
               <LeafletMap markers={markers} height={340} zoom={11} />
-              <div className="detail-map-legend">
-                <span><i className="lg-dot" style={{ background: '#0e7a3e' }} /> Farm</span>
-                <span><i className="lg-dot" style={{ background: '#f4a621' }} /> Meet-up point</span>
-                <span><i className="lg-dot" style={{ background: '#0a4a26' }} /> Distributor hub</span>
-              </div>
+              <p className="text-sm text-muted">The grower provided this location. Confirm the pickup point before travelling.</p>
             </div>
           )}
 
@@ -145,14 +151,11 @@ export default function ProduceDetailPage() {
               <div>
                 <div className="farmer-name-lg">{item.farmName || item.farmerName}</div>
                 <div className="farmer-meta-lg">by {item.farmerName}</div>
-                <div className="farmer-rating-lg">★ {item.farmerRating.toFixed(1)} · {item.farmerOrdersFulfilled} orders fulfilled</div>
               </div>
             </div>
             <div className="farmer-info-rows">
               {[
-                ['📍 Location', `${item.region}, ${item.country}`],
-                ['🗺 GPS', item.farmLatitude ? `${item.farmLatitude.toFixed(4)}°, ${item.farmLongitude?.toFixed(4)}°` : '—'],
-                ['📞 Phone', item.farmerPhone ?? '—'],
+                ['📍 Location', origin || 'See farm location above'],
               ].map(([label, value]) => (
                 <div key={label} className="farmer-info-row">
                   <span className="farmer-info-label">{label}</span>
@@ -161,14 +164,17 @@ export default function ProduceDetailPage() {
               ))}
             </div>
             <Link to={`/farmers/${item.farmerUsername || item.farmerProfileId}`} className="btn btn-outline btn-sm" style={{ marginTop: 16 }}>
-              View Full Farmer Profile →
+              View grower and other harvests
             </Link>
+            {phone && <a href={`tel:${phone}`} className="btn btn-primary btn-sm" style={{ marginTop: 16, marginLeft: 8 }}>Call grower</a>}
           </div>
         </div>
 
         {/* Right: trade ticket */}
         <div className="order-panel">
-          <TradeTicket
+          {!isAvailable ? <div className="card" role="status">
+            {isScheduled ? `Orders open on ${fmt(item.availableFrom)}.` : 'This batch is unavailable for orders.'}
+          </div> : !advanced ? <BuyPanel key={item.id} commodity={item.name} offers={offers} direct /> : <TradeTicket
             ctx={{
               commodity: item.category,
               unit: item.unit,
@@ -183,7 +189,7 @@ export default function ProduceDetailPage() {
             }}
             initialSide={initialSide}
             initialKind={initialKind}
-          />
+          />}
           <Link to="/delivery" className="btn btn-outline btn-sm" style={{ width: '100%', justifyContent: 'center', borderRadius: 8, marginTop: 12 }}>
             🚚 Estimate delivery & route
           </Link>

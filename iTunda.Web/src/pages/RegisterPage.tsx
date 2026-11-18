@@ -52,10 +52,10 @@ export default function RegisterPage() {
       <div className="auth-left">
         <div className="auth-left-content">
           <div className="auth-brand">🌿 iTunda</div>
-          <h1 className="auth-headline">Join the global farm-to-fork exchange</h1>
+          <h1 className="auth-headline">Join the grower marketplace</h1>
           <p className="auth-tagline">Whether you grow it or source it — iTunda connects you</p>
           <div className="auth-features">
-            {['Free to join','Post unlimited listings as a Farmer','Buy, bid & trade futures across 4 export zones','Delivery routing & tracking built-in'].map(f => (
+            {['Free to join', 'List produce from your harvest', 'Buy directly from growers', 'Keep track of your orders'].map(f => (
               <div key={f} className="auth-feature">✓ {f}</div>
             ))}
           </div>

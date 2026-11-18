@@ -74,6 +74,8 @@ export interface CreateProduceRequest {
   imagePath?: string | null;
   harvestDate?: string | null;
   expiryDate?: string | null;
+  originLabel?: string;
+  sellerPhone?: string;
   availableFrom?: string | null;
   isExportReady?: boolean;
   gradeQuality?: string | null;

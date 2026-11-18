@@ -49,10 +49,10 @@ export default function LoginPage() {
       <div className="auth-left">
         <div className="auth-left-content">
           <div className="auth-brand">🌿 iTunda</div>
-          <h1 className="auth-headline">Kenya's farm-to-fork marketplace</h1>
-          <p className="auth-tagline">Connect directly with certified farmers across 47 counties</p>
+          <h1 className="auth-headline">Buy and sell directly on iTunda</h1>
+          <p className="auth-tagline">Sign in to order produce, post a harvest or manage your listings.</p>
           <div className="auth-features">
-            {['1,000+ fresh produce listings','Real GPS farm locations','Export-ready certification','Live expiry tracking'].map(f => (
+            {['Post crops and animal feed', 'See the grower and farm location', 'Check availability and best-before dates'].map(f => (
               <div key={f} className="auth-feature">✓ {f}</div>
             ))}
           </div>
