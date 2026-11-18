@@ -202,7 +202,7 @@ const otherLots: DemoHarvest[] = examples.map((item, index) => {
   };
 });
 
-export const demoHarvests = [...tomatoLots, ...otherLots];
+export const demoHarvests = [...otherLots, ...tomatoLots];
 export const demoCategories = [...new Set(demoHarvests.map(lot => lot.category))].sort();
 
 export function demoHarvestPath(lot: DemoHarvest) {
