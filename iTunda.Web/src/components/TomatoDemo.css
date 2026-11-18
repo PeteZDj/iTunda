@@ -13,6 +13,9 @@
 .td-card-link:focus-visible { outline-offset: -4px; outline: 3px solid #285d3b; }
 .td-photo { position: relative; height: 124px; background: #f8ede2; }
 .td-photo img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center 54%; }
+.td-illustration { min-height: 124px; height: 100%; display: grid; place-items: center; background: radial-gradient(ellipse at 65% 33%, #f8f5e5, #dcebd9); font-size: 3.75rem; }
+.td-hero > .td-illustration { font-size: clamp(4rem, 9vw, 7rem); padding: 17px; }
+.td-buy-select { display: grid; gap: 4px; max-width: 300px; margin-bottom: 14px; font-weight: 700; color: #173126; }
 .td-photo .td-label { position: absolute; left: 11px; top: 11px; }
 .td-label { display: inline-block; padding: 4px 8px; border-radius: 5px; width: max-content; background: #fceacb; color: #644705; font-weight: 750; font-size: .72rem; }
 .td-card-body, .td-grower-card { padding: 12px 14px; }

@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { getFarmers } from '../services/api';
 import { flagUrl } from '../lib/geo';
 import type { FarmerResponse } from '../types';
-import { DemoGrowerSection } from '../components/TomatoDemo';
-import { demoTomatoLots, matchesDemoTomato } from '../lib/demoTomatoes';
+import { DemoGrowerSection } from '../components/DemoCatalogue';
+import { demoHarvests, matchesDemoHarvest } from '../lib/demoHarvests';
 import './FarmersPage.css';
 
 type SortKey = 'rating' | 'orders' | 'acres';
@@ -29,7 +29,7 @@ export default function FarmersPage() {
   }, []);
 
   const countries = useMemo(
-    () => Array.from(new Set([...farmers.map(f => f.country), ...demoTomatoLots.map(lot => lot.country)].filter(Boolean))).sort() as string[],
+    () => Array.from(new Set([...farmers.map(f => f.country), ...demoHarvests.map(lot => lot.country)].filter(Boolean))).sort() as string[],
     [farmers]);
 
   const stats = useMemo(() => ({
@@ -104,7 +104,7 @@ export default function FarmersPage() {
         )}
       </div>
       <div className="page-container">
-        <DemoGrowerSection lots={exportOnly ? [] : demoTomatoLots.filter(lot => (!country || lot.country === country) && matchesDemoTomato(lot, search))} />
+        <DemoGrowerSection lots={exportOnly ? [] : demoHarvests.filter(lot => (!country || lot.country === country) && matchesDemoHarvest(lot, search))} />
       </div>
     </div>
   );

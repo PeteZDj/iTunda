@@ -6,6 +6,8 @@ import { useCurrency } from '../context/CurrencyContext';
 import { flagUrl } from '../lib/geo';
 import { CATEGORY_ICONS } from '../lib/categories';
 import type { ProduceResponse, RegionDto } from '../types';
+import { DemoHarvestSection } from '../components/DemoCatalogue';
+import { demoHarvests } from '../lib/demoHarvests';
 import './LandingPage.css';
 
 function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
@@ -209,6 +211,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── FEATURED PRODUCE ─────────────────────────────────── */}
+      {featured.length === 0 && <div className="page-container">
+        <DemoHarvestSection lots={demoHarvests.filter(lot => ['kirinyaga-roma', 'muranga-hass', 'kiambu-wheat-bran'].includes(lot.slug))} />
+        <Link to="/browse" className="btn btn-outline btn-sm">Browse all categories →</Link>
+      </div>}
       {featured.length > 0 && <section className="section featured-section">
         <div className="page-container">
           <div className="section-header">

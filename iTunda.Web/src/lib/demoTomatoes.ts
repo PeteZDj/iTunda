@@ -85,14 +85,8 @@ export const demoTomatoLots: DemoTomatoLot[] = [
   },
 ];
 
-export function matchesDemoTomato(lot: DemoTomatoLot, search: string) {
-  const query = search.trim().toLowerCase();
-  return [`${lot.variety} tomatoes`, lot.farm, lot.grower, `${lot.town}, ${lot.region}, ${lot.country}`, lot.lotCode]
-    .some(value => value.toLowerCase().includes(query));
-}
-
-export function demoMoney(amount: number, currency: Currency) {
-  return `${currency} ${amount.toLocaleString('en-GB', { maximumFractionDigits: 2, minimumFractionDigits: currency === 'ZAR' ? 2 : 0 })}`;
+export function demoMoney(amount: number, currency: string) {
+  return `${currency} ${amount.toLocaleString('en-GB', { maximumFractionDigits: 2, minimumFractionDigits: ['ZAR', 'USD', 'EUR'].includes(currency) ? 2 : 0 })}`;
 }
 
 export function demoDate(iso: string) {

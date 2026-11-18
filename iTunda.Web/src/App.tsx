@@ -19,7 +19,7 @@ import DeliveryPage from './pages/DeliveryPage';
 import DownloadsPage from './pages/DownloadsPage';
 import SellPage from './pages/SellPage';
 import AccountPage from './pages/AccountPage';
-import { DemoTomatoPage } from './pages/DemoTomatoPage';
+import { DemoHarvestPage } from './pages/DemoHarvestPage';
 
 function WithNav({ children }: { children: React.ReactNode }) {
   return <><Navbar /><CommodityTicker />{children}</>;
@@ -42,8 +42,9 @@ export default function App() {
               <Route path="/delivery" element={<WithNav><DeliveryPage /></WithNav>} />
               <Route path="/downloads" element={<WithNav><DownloadsPage /></WithNav>} />
               <Route path="/produce/:id" element={<WithNav><ProduceDetailPage /></WithNav>} />
-              <Route path="/demo/tomatoes/:slug" element={<WithNav><DemoTomatoPage /></WithNav>} />
-              <Route path="/demo/growers/:slug" element={<WithNav><DemoTomatoPage profile /></WithNav>} />
+              <Route path="/demo/tomatoes/:slug" element={<WithNav><DemoHarvestPage /></WithNav>} />
+              <Route path="/demo/harvests/:slug" element={<WithNav><DemoHarvestPage /></WithNav>} />
+              <Route path="/demo/growers/:slug" element={<WithNav><DemoHarvestPage profile /></WithNav>} />
               <Route path="/farmers" element={<WithNav><FarmersPage /></WithNav>} />
               <Route path="/farmers/:id" element={<WithNav><FarmerProfilePage /></WithNav>} />
               <Route path="/orders" element={<WithNav><OrdersPage /></WithNav>} />

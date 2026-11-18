@@ -27,6 +27,10 @@ export const CATEGORY_ICONS: Record<string, string> = {
   'Ginger': '🫚',
   'Green Chillies': '🌶️',
   'Sweet Potatoes': '🍠',
+  'Leafy Greens': '🥬',
+  'Maize': '🌽',
+  'Animal Feed': '🌾',
+  'Other Crops': '🌱',
 };
 
 export function categoryIcon(name: string): string {

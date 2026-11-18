@@ -7,8 +7,8 @@ import { categoryIcon } from '../lib/categories';
 import TradeTicket from '../components/TradeTicket';
 import BuyPanel from '../components/BuyPanel';
 import PriceChart from '../components/PriceChart';
-import { DemoTomatoSection } from '../components/TomatoDemo';
-import { demoTomatoLots } from '../lib/demoTomatoes';
+import { DemoHarvestSection } from '../components/DemoCatalogue';
+import { demoHarvests } from '../lib/demoHarvests';
 import { getMarketOverview, sampleHistory } from '../lib/marketData';
 import type { BuyOrderResponse, ProduceResponse, PriceHistory, OrderSide } from '../types';
 import './BuyPage.css';
@@ -39,6 +39,7 @@ export default function BuyPage() {
   const active = commodities.find(c => c.category === selected);
   const samplePrices = market?.sampleCategories.has(selected) ?? false;
   const isTomato = selected === 'Tomatoes';
+  const demoLots = demoHarvests.filter(lot => lot.category === selected);
   const [offers, setOffers] = useState<ProduceResponse[]>([]);
   const [orders, setOrders] = useState<BuyOrderResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,12 +94,19 @@ export default function BuyPage() {
             crate or bunch — with local or international delivery scheduled for a time that suits you.
           </p>
           <Link to={`/market?c=${encodeURIComponent(selected)}`} className="mk-hero-link">⇅ Prefer the pro trading terminal? Open Market →</Link>
-          {isTomato && <a href="#buy-price-trend" className="mk-hero-link">See the price trend ↓</a>}
+          <a href="#buy-price-trend" className="mk-hero-link">See the price trend ↓</a>
         </div>
       </div>
 
       <div className="page-container mk-body">
-        {isTomato && offers.length === 0 && <DemoTomatoSection lots={demoTomatoLots} />}
+        <div className="td-buy-select">
+          <label htmlFor="buy-commodity">Commodity</label>
+          <select id="buy-commodity" className="select" value={selected} onChange={event => selectCommodity(event.target.value)}>
+            {!active && <option>{selected}</option>}
+            {commodities.map(c => <option key={c.category}>{c.category}</option>)}
+          </select>
+        </div>
+        {offers.length === 0 && <DemoHarvestSection lots={demoLots} category={selected} />}
         {/* Price trends + timeframe */}
         <div className="mk-trends card" id="buy-price-trend">
           <div className="mk-trends-head">
@@ -180,7 +188,7 @@ export default function BuyPage() {
 
         {/* Primary buy flow — buy the real produce with delivery */}
         <BuyPanel commodity={selected} offers={offers} onPlaced={() => setReloadKey(k => k + 1)} />
-        {isTomato && offers.length > 0 && <DemoTomatoSection lots={demoTomatoLots} />}
+        {offers.length > 0 && <DemoHarvestSection lots={demoLots} category={selected} />}
 
         {/* Advanced order-book ticket (sell offers, limit, futures, puts) */}
         {showTicket && active && !samplePrices && (

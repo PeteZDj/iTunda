@@ -6,8 +6,8 @@ import { flagUrl, ZONES } from '../lib/geo';
 import { categoryIcon } from '../lib/categories';
 import type { ProduceResponse } from '../types';
 import ProduceCard from '../components/ProduceCard';
-import { DemoTomatoSection } from '../components/TomatoDemo';
-import { demoTomatoLots, matchesDemoTomato } from '../lib/demoTomatoes';
+import { DemoHarvestSection } from '../components/DemoCatalogue';
+import { demoCategories, demoHarvests, matchesDemoHarvest } from '../lib/demoHarvests';
 import './BrowsePage.css';
 
 export default function BrowsePage() {
@@ -28,9 +28,11 @@ export default function BrowsePage() {
 
   // Category resolves from the path (/browse/Avocados) or the query (?category=Avocados)
   const category = pathCategory ? decodeURIComponent(pathCategory) : (params.get('category') ?? '');
-  const demoLots = !exportOnly && (!category || /^tomato(?:es)?$/i.test(category))
-    ? demoTomatoLots.filter(lot => (!region || lot.region === region) && (zone == null || lot.zone === zone) && matchesDemoTomato(lot, q))
-    : [];
+  const demoLots = exportOnly ? [] : demoHarvests.filter(lot =>
+    (!category || lot.category.toLowerCase() === category.toLowerCase()) &&
+    (!region || lot.region === region) && (zone == null || lot.zone === zone) && matchesDemoHarvest(lot, q));
+  const browseCategories = [...new Set([...categories, ...demoCategories])];
+  const demoRegions = [...new Map(demoHarvests.map(lot => [lot.region, lot])).values()];
 
   useEffect(() => { getCategories().then(setCategories).catch(() => {}); }, []);
 
@@ -93,7 +95,7 @@ export default function BrowsePage() {
             <button className={`cat-pill ${!category ? 'active' : ''}`} onClick={() => applyCategory('')}>
               <span className="cat-emoji">🌍</span> All produce
             </button>
-            {categories
+            {browseCategories
               .filter(c => c.toLowerCase().includes(catFilter.toLowerCase()))
               .map(c => (
                 <button key={c} className={`cat-pill ${category === c ? 'active' : ''}`} onClick={() => applyCategory(c)}>
@@ -124,7 +126,7 @@ export default function BrowsePage() {
                 {regions.filter(r => r.zone === z.zone).map(r => (
                   <option key={r.name} value={r.name}>{r.name}, {r.country} ({r.listingCount})</option>
                 ))}
-                {demoTomatoLots.filter(lot => lot.zone === z.zone && !regions.some(r => r.name === lot.region)).map(lot => (
+                {demoRegions.filter(lot => lot.zone === z.zone && !regions.some(r => r.name === lot.region)).map(lot => (
                   <option key={lot.slug} value={lot.region}>{lot.region}, {lot.country} (demo)</option>
                 ))}
               </optgroup>
@@ -190,7 +192,7 @@ export default function BrowsePage() {
             {items.map(item => <ProduceCard key={item.id} item={item} />)}
           </div>
         )}
-        <DemoTomatoSection lots={demoLots} />
+        <DemoHarvestSection lots={demoLots} category={category} />
       </main>
     </div>
   );
