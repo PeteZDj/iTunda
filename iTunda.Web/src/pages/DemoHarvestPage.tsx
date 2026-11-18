@@ -1,22 +1,29 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { DemoHarvestCard } from '../components/DemoCatalogue';
+import { DemoHarvestSection } from '../components/DemoCatalogue';
 import { demoDate, demoMoney } from '../lib/demoTomatoes';
-import { demoCategoryUrl, demoHarvests, tomatoVinePhoto, type DemoHarvest } from '../lib/demoHarvests';
+import { demoCategoryUrl, tomatoVinePhoto, type DemoHarvest } from '../lib/demoHarvests';
+import { useDemoHarvests } from '../hooks/useDemoHarvests';
 import { categoryIcon } from '../lib/categories';
 import { zoneName } from '../lib/geo';
 
 function DemoPurchase({ lot }: { lot: DemoHarvest }) {
   const [quantity, setQuantity] = useState('5');
   const [fulfilment, setFulfilment] = useState('Market pickup');
-  const [receipt, setReceipt] = useState(false);
+  const [receipt, setReceipt] = useState<{ count: number; fulfilment: string; total: string; lotCode: string } | null>(null);
+  const [expiredLot, setExpiredLot] = useState('');
   const count = Number(quantity);
   const valid = Number.isInteger(count) && count > 0 && count <= lot.available;
   const total = valid ? demoMoney(count * lot.price, lot.currency) : '—';
 
   function confirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (valid) setReceipt(true);
+    if (!valid) return;
+    if (Date.now() >= Date.parse(lot.renewsOn)) {
+      setExpiredLot(lot.lotCode);
+      return;
+    }
+    setReceipt({ count, fulfilment, total, lotCode: lot.lotCode });
   }
 
   return (
@@ -26,9 +33,9 @@ function DemoPurchase({ lot }: { lot: DemoHarvest }) {
       {receipt ? (
         <div className="td-receipt" role="status">
           <strong>Demo order complete</strong>
-          <p>{count} {lot.unit}{lot.unit === 'stem' && count !== 1 ? 's' : ''} · {fulfilment} · {total}</p>
-          <p>Lot {lot.lotCode}. No payment or delivery was arranged.</p>
-          <button className="btn btn-outline btn-sm" type="button" onClick={() => setReceipt(false)}>Start another demo order</button>
+          <p>{receipt.count} {lot.unit}{lot.unit === 'stem' && receipt.count !== 1 ? 's' : ''} · {receipt.fulfilment} · {receipt.total}</p>
+          <p>Lot {receipt.lotCode}. No payment or delivery was arranged.</p>
+          <button className="btn btn-outline btn-sm" type="button" onClick={() => setReceipt(null)}>Start another demo order</button>
         </div>
       ) : (
         <form onSubmit={confirm}>
@@ -37,6 +44,7 @@ function DemoPurchase({ lot }: { lot: DemoHarvest }) {
             <option>Market pickup</option><option>Local delivery</option>
           </select></label>
           <div className="td-total"><span>Demo produce total</span><strong>{total}</strong></div>
+          {expiredLot === lot.lotCode && <p role="status">This demo offer expired. Check the renewed batch before confirming.</p>}
           <button className="btn btn-primary" disabled={!valid}>Confirm demo order</button>
         </form>
       )}
@@ -46,6 +54,7 @@ function DemoPurchase({ lot }: { lot: DemoHarvest }) {
 
 export function DemoHarvestPage({ profile = false }: { profile?: boolean }) {
   const { slug } = useParams();
+  const demoHarvests = useDemoHarvests();
   const lot = demoHarvests.find(item => (profile ? item.growerSlug : item.slug) === slug);
   if (!lot) return <main className="td-page page-container"><h1>Demo lot or grower unavailable</h1><Link to="/browse">Browse demo harvests →</Link></main>;
 
@@ -65,10 +74,7 @@ export function DemoHarvestPage({ profile = false }: { profile?: boolean }) {
         {isTomato ? <img src={tomatoVinePhoto} width="500" height="610" alt="Illustrative photo of a ripe tomato growing on a vine" />
           : <div className="td-illustration" aria-hidden="true">{categoryIcon(lot.category)}</div>}
       </header>
-      <section className="td-section">
-        <h2>Example lots</h2>
-        <div className="td-card-grid">{demoHarvests.filter(item => item.growerSlug === lot.growerSlug).map(item => <DemoHarvestCard key={item.slug} lot={item} />)}</div>
-      </section>
+      <DemoHarvestSection key={lot.growerSlug} lots={demoHarvests.filter(item => item.growerSlug === lot.growerSlug)} />
     </main>
   );
 
@@ -86,6 +92,7 @@ export function DemoHarvestPage({ profile = false }: { profile?: boolean }) {
           <p><Link to={`/demo/growers/${lot.growerSlug}`}>{lot.farm} · {lot.grower} →</Link></p>
           <p>{zoneName(lot.zone)} · Sample lot of {lot.available} {lot.unit === 'stem' ? 'stems' : lot.unit}</p>
           <p>{lot.grade}</p>
+          <p className="td-offer-end">Demo offer renews <time dateTime={lot.renewsOn}>{demoDate(lot.renewsOn)}</time></p>
         </div>
         {lot.photo ? <figure>
           <img src={lot.photo} width="640" height="410" alt={`Illustrative photo for ${lot.name}`} />
@@ -115,6 +122,7 @@ export function DemoHarvestPage({ profile = false }: { profile?: boolean }) {
             </dl>
             <p>{ref.method} · {ref.period}</p>
             <p><a href={ref.source}>View published market data ↗</a></p>
+            <p>The offer renews at 00:00 UTC with a new batch code and dates.</p>
           </section>
           <DemoPurchase key={lot.slug} lot={lot} />
         </aside>

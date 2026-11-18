@@ -4,7 +4,8 @@ import { getFarmers } from '../services/api';
 import { flagUrl } from '../lib/geo';
 import type { FarmerResponse } from '../types';
 import { DemoGrowerSection } from '../components/DemoCatalogue';
-import { demoHarvests, matchesDemoHarvest } from '../lib/demoHarvests';
+import { matchesDemoHarvest } from '../lib/demoHarvests';
+import { useDemoHarvests } from '../hooks/useDemoHarvests';
 import './FarmersPage.css';
 
 type SortKey = 'rating' | 'orders' | 'acres';
@@ -16,6 +17,7 @@ function farmPhoto(f: FarmerResponse, i = 0): string {
 }
 
 export default function FarmersPage() {
+  const demoHarvests = useDemoHarvests();
   const [farmers, setFarmers] = useState<FarmerResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -30,7 +32,7 @@ export default function FarmersPage() {
 
   const countries = useMemo(
     () => Array.from(new Set([...farmers.map(f => f.country), ...demoHarvests.map(lot => lot.country)].filter(Boolean))).sort() as string[],
-    [farmers]);
+    [demoHarvests, farmers]);
 
   const stats = useMemo(() => ({
     total: farmers.length,
@@ -104,7 +106,7 @@ export default function FarmersPage() {
         )}
       </div>
       <div className="page-container">
-        <DemoGrowerSection lots={exportOnly ? [] : demoHarvests.filter(lot => (!country || lot.country === country) && matchesDemoHarvest(lot, search))} />
+        <DemoGrowerSection key={JSON.stringify([country, search, exportOnly])} lots={exportOnly ? [] : demoHarvests.filter(lot => (!country || lot.country === country) && matchesDemoHarvest(lot, search))} />
       </div>
     </div>
   );

@@ -1,10 +1,11 @@
 import { demoTomatoLots } from './demoTomatoes';
+import { seededRand } from './trading';
 
 export interface MarketReference { market: string; period: string; price: number; source: string; method: string }
 export interface TraceEvent { date: string; title: string; description: string }
 interface Grower { growerSlug: string; farm: string; grower: string; town: string; region: string; country: string; zone: number }
 
-export interface DemoHarvest extends Grower {
+interface DemoHarvestTemplate extends Grower {
   slug: string;
   name: string;
   category: string;
@@ -22,14 +23,22 @@ export interface DemoHarvest extends Grower {
   farmStory?: string;
 }
 
+export interface DemoHarvest extends DemoHarvestTemplate {
+  opensOn: string;
+  renewsOn: string;
+}
+
+const dayMs = 86_400_000;
+const minimumOffers = 35;
+
 export const tomatoHarvestPhoto = '/images/demo-tomatoes/harvest.webp';
 export const tomatoVinePhoto = '/images/demo-tomatoes/vine.webp';
 
 function daysFrom(date: string, offset: number) {
-  return new Date(Date.parse(date) + offset * 86_400_000).toISOString().slice(0, 10);
+  return new Date(Date.parse(date) + offset * dayMs).toISOString().slice(0, 10);
 }
 
-const tomatoLots: DemoHarvest[] = demoTomatoLots.map(lot => ({
+const tomatoLots: DemoHarvestTemplate[] = demoTomatoLots.map(lot => ({
   ...lot, growerSlug: lot.slug, name: `${lot.variety} tomatoes`, category: 'Tomatoes', unit: 'kg', available: lot.stockKg,
   photo: tomatoHarvestPhoto,
   trace: [
@@ -178,7 +187,7 @@ const stageNotes: Record<Stage, { start: string; harvest: string; packDelay: num
   flower: { start: 'Cutting block assigned', harvest: 'Cut and graded', packDelay: 0, keepDays: 6 },
 };
 
-const otherLots: DemoHarvest[] = examples.map((item, index) => {
+const otherLots: DemoHarvestTemplate[] = examples.map((item, index) => {
   const origin = growers[item.grower];
   const stage = stageNotes[item.stage];
   const packed = item.slug === 'cape-apples' ? '2026-11-14' : daysFrom('2026-11-18', -(index % 3));
@@ -202,8 +211,62 @@ const otherLots: DemoHarvest[] = examples.map((item, index) => {
   };
 });
 
-export const demoHarvests = [...otherLots, ...tomatoLots];
-export const demoCategories = [...new Set(demoHarvests.map(lot => lot.category))].sort();
+export const demoTemplates = [...otherLots, ...tomatoLots];
+export const demoCategories = [...new Set(demoTemplates.map(lot => lot.category))].sort();
+
+interface OfferSlot { template: DemoHarvestTemplate; slug: string; variant: number; packedOn: string; renewalDays: number }
+
+function offerSlot(template: DemoHarvestTemplate, variant: number): OfferSlot {
+  const packedOn = template.trace.find(event => event.title === 'Packed and labeled')!.date;
+  const qualityDate = template.trace[template.trace.length - 1].date;
+  const qualityDays = (Date.parse(qualityDate) - Date.parse(packedOn)) / dayMs;
+  return {
+    template, variant, packedOn, renewalDays: Math.min(14, qualityDays),
+    slug: variant === 0 ? template.slug : `${template.slug}-offer-${variant}`,
+  };
+}
+
+// Keep the curated examples and give each category stable offer slots. Copy the
+// reference and origin together so a regional lot never inherits an unrelated quote.
+const slots = demoTemplates.map(template => offerSlot(template, 0));
+for (const category of demoCategories) {
+  const templates = demoTemplates.filter(template => template.category === category);
+  for (let index = templates.length; index < minimumOffers; index++) {
+    slots.push(offerSlot(templates[index % templates.length], index + 1));
+  }
+}
+
+export function buildRollingDemoHarvests(now: number): DemoHarvest[] {
+  const today = Math.floor(now / dayMs);
+  return slots.map(({ template, slug, variant, renewalDays, packedOn }) => {
+    const packedDay = Date.parse(packedOn) / dayMs;
+    const firstDay = packedDay + variant % renewalDays;
+    const cycle = Math.floor((today - firstDay) / renewalDays);
+    const dateShift = firstDay + cycle * renewalDays - packedDay;
+    const opensOn = daysFrom(packedOn, dateShift);
+    const renewsOn = daysFrom(opensOn, renewalDays);
+    const cycleCode = opensOn.replaceAll('-', '');
+    const batch = variant ? `-O${variant}` : '';
+    const lotCode = `${template.lotCode.replace(/-\d{6}(?=-[A-Z]$|$)/, '')}${batch}-${cycleCode}`;
+    const plot = (variant - 1) % 5 + 1;
+    const farm = variant ? `${template.farm} · Plot ${plot}` : template.farm;
+    const field = variant ? `${template.field} / ${variant}` : template.field;
+    const sampleSize = variant ? Math.max(5, Math.round(template.available * (0.45 + seededRand(`${slug}:${cycleCode}`) * 1.15))) : template.available;
+    const price = variant ? Number((template.price * (0.85 + seededRand(`${slug}:price`) * 0.22)).toFixed(2)) : template.price;
+
+    return {
+      ...template, slug, lotCode, farm, field, opensOn, renewsOn, available: sampleSize, price,
+      picked: daysFrom(template.picked, dateShift),
+      growerSlug: variant ? `${template.growerSlug}-plot-${plot}` : template.growerSlug,
+      farmStory: variant ? undefined : template.farmStory,
+      trace: template.trace.map(event => ({
+        ...event, date: daysFrom(event.date, dateShift),
+        description: event.description.replaceAll(template.lotCode, lotCode)
+          .replaceAll(template.field, field).replaceAll(template.farm, farm),
+      })),
+    };
+  });
+}
 
 export function demoHarvestPath(lot: DemoHarvest) {
   return lot.category === 'Tomatoes' ? `/demo/tomatoes/${lot.slug}` : `/demo/harvests/${lot.slug}`;

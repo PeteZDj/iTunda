@@ -7,7 +7,8 @@ import { categoryIcon } from '../lib/categories';
 import type { ProduceResponse } from '../types';
 import ProduceCard from '../components/ProduceCard';
 import { DemoHarvestSection } from '../components/DemoCatalogue';
-import { demoCategories, demoHarvests, matchesDemoHarvest } from '../lib/demoHarvests';
+import { demoCategories, matchesDemoHarvest } from '../lib/demoHarvests';
+import { useDemoHarvests } from '../hooks/useDemoHarvests';
 import './BrowsePage.css';
 
 export default function BrowsePage() {
@@ -15,6 +16,7 @@ export default function BrowsePage() {
   const { category: pathCategory } = useParams();
   const navigate = useNavigate();
   const { regions, zone, region, setZone, setRegion, clear } = useRegion();
+  const demoHarvests = useDemoHarvests();
 
   const [items, setItems] = useState<ProduceResponse[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -192,7 +194,7 @@ export default function BrowsePage() {
             {items.map(item => <ProduceCard key={item.id} item={item} />)}
           </div>
         )}
-        <DemoHarvestSection lots={demoLots} category={category} />
+        <DemoHarvestSection key={JSON.stringify([category, region, zone, q, exportOnly])} lots={demoLots} category={category} />
       </main>
     </div>
   );

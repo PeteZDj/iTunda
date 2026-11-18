@@ -7,7 +7,7 @@ import { flagUrl } from '../lib/geo';
 import { CATEGORY_ICONS } from '../lib/categories';
 import type { ProduceResponse, RegionDto } from '../types';
 import { DemoHarvestSection } from '../components/DemoCatalogue';
-import { demoHarvests } from '../lib/demoHarvests';
+import { useDemoHarvests } from '../hooks/useDemoHarvests';
 import './LandingPage.css';
 
 function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
@@ -40,6 +40,7 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
 }
 
 export default function LandingPage() {
+  const demoHarvests = useDemoHarvests();
   const [categories, setCategories] = useState<string[]>([]);
   const [featured, setFeatured] = useState<ProduceResponse[]>([]);
   const [regions, setRegions] = useState<RegionDto[]>([]);

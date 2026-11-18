@@ -16,6 +16,11 @@
 .td-illustration { min-height: 124px; height: 100%; display: grid; place-items: center; background: radial-gradient(ellipse at 65% 33%, #f8f5e5, #dcebd9); font-size: 3.75rem; }
 .td-hero > .td-illustration { font-size: clamp(4rem, 9vw, 7rem); padding: 17px; }
 .td-buy-select { display: grid; gap: 4px; max-width: 300px; margin-bottom: 14px; font-weight: 700; color: #173126; }
+.td-pagination, .td-page-buttons { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.td-pagination { justify-content: space-between; margin: 10px 0 18px; }
+.td-page-count { color: #496854; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.td-page-buttons .select { width: auto; padding: 6px 8px; min-height: 35px; font-size: .83rem; }
+.td-page-buttons button:disabled { opacity: .55; cursor: default; }
 .td-photo .td-label { position: absolute; left: 11px; top: 11px; }
 .td-label { display: inline-block; padding: 4px 8px; border-radius: 5px; width: max-content; background: #fceacb; color: #644705; font-weight: 750; font-size: .72rem; }
 .td-card-body, .td-grower-card { padding: 12px 14px; }

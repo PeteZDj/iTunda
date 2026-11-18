@@ -1,17 +1,17 @@
 import { getCommodities } from '../services/api';
 import type { CommodityDto, PriceHistory } from '../types';
 import { seededRand } from './trading';
-import { demoHarvests } from './demoHarvests';
+import { demoTemplates } from './demoHarvests';
 import { FALLBACK_RATES } from './currency';
 
-const tomatoBenchmarks = demoHarvests.filter(lot => lot.category === 'Tomatoes' && lot.currency === 'KES')
+const tomatoBenchmarks = demoTemplates.filter(lot => lot.category === 'Tomatoes' && lot.currency === 'KES')
   .map(lot => lot.priceReference.price).sort((a, b) => a - b);
 const tomatoAnchor = tomatoBenchmarks[Math.floor(tomatoBenchmarks.length / 2)];
 
 // The simulator stores quotes in KES. For each category, use the first sourced
 // benchmark convertible at the demo FX rates, and keep lot prices in their own currencies.
 const sampleByCategory = new Map<string, CommodityDto>();
-for (const { category, unit, currency, priceReference } of demoHarvests) {
+for (const { category, unit, currency, priceReference } of demoTemplates) {
   if (sampleByCategory.has(category) || !FALLBACK_RATES[currency]) continue;
   const avgPrice = category === 'Tomatoes' ? tomatoAnchor : priceReference.price / FALLBACK_RATES[currency];
   const changePct = (seededRand(category) - .5) * 6;
